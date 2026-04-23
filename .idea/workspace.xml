@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="first build">
+    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Tablist">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TabListManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TabListManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/KMCCore-1.0.0.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TabListManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TabListManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/original-KMCCore-1.0.0.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/scoreboard/ScoreboardManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/scoreboard/ScoreboardManager.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,7 +75,7 @@
       <updated>1776950267468</updated>
       <workItem from="1776950268560" duration="1795000" />
       <workItem from="1776953045662" duration="390000" />
-      <workItem from="1776953524488" duration="5072000" />
+      <workItem from="1776953524488" duration="8225000" />
     </task>
     <task id="LOCAL-00001" summary="first build">
       <option name="closed" value="true" />
@@ -95,7 +93,23 @@
       <option name="project" value="LOCAL" />
       <updated>1776958400647</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Tablist">
+      <option name="closed" value="true" />
+      <created>1776960947820</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776960947821</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Tablist">
+      <option name="closed" value="true" />
+      <created>1776961016534</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1776961016535</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -103,6 +117,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first build" />
-    <option name="LAST_COMMIT_MESSAGE" value="first build" />
+    <MESSAGE value="Tablist" />
+    <option name="LAST_COMMIT_MESSAGE" value="Tablist" />
   </component>
 </project>

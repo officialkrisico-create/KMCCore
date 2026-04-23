@@ -77,43 +77,125 @@ public class ScoreboardManager {
     /**
      * Creates or updates the sidebar scoreboard for a single player.
      */
+//    public void updatePlayer(Player player) {
+//        Scoreboard board = boards.computeIfAbsent(player.getUniqueId(),
+//                uuid -> Bukkit.getScoreboardManager().getNewScoreboard());
+//
+//        String objName = "kmc_sidebar";
+//        Objective obj = board.getObjective(objName);
+//
+//        // Recreate objective to allow full title/line changes
+//        if (obj != null) obj.unregister();
+//        obj = board.registerNewObjective(objName, Criteria.DUMMY,
+//                MessageUtil.color(plugin.getConfig().getString("scoreboard.title", "&6&lKMC")));
+//        obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+//
+//        // Gather data
+//        boolean active       = plugin.getTournamentManager().isActive();
+//        int     round        = plugin.getTournamentManager().getCurrentRound();
+//        double  mul          = plugin.getTournamentManager().getMultiplier();
+//        String  gameName     = plugin.getGameManager().getActiveGame() != null
+//                               ? plugin.getGameManager().getActiveGame().getDisplayName()
+//                               : "&8Geen";
+//
+//        PlayerData pd        = plugin.getPlayerDataManager().get(player.getUniqueId());
+//        int coins  = pd != null ? pd.getCoins()  : 0;
+//        int ppoints= pd != null ? pd.getPoints() : 0;
+//
+//        KMCTeam myTeam = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
+//
+//        List<KMCTeam> top3 = plugin.getTeamManager().getTeamsSortedByPoints()
+//                .stream().limit(3).toList();
+//
+//        // Build lines (score = display order, highest = top)
+//        int line = 14;
+//
+//        // --- Header spacer
+//        line = setLine(obj, board, line, "&r");
+//
+//        // --- Tournament status
+//        if (!active) {
+//            line = setLine(obj, board, line, "&7Status: &cInactief");
+//        } else {
+//            line = setLine(obj, board, line, "&7Ronde: &e" + round + " &8(&e" + mul + "x&8)");
+//            line = setLine(obj, board, line, "&7Game: &b" + gameName);
+//        }
+//
+//        // --- Spacer
+//        line = setLine(obj, board, line, "&r ");
+//
+//        // --- Team leaderboard
+//        line = setLine(obj, board, line, "&6&lTop Teams:");
+//        for (int i = 0; i < top3.size(); i++) {
+//            KMCTeam t = top3.get(i);
+//            String medal = i == 0 ? "&6#1" : i == 1 ? "&7#2" : "&c#3";
+//            line = setLine(obj, board, line,
+//                    medal + " " + t.getColor() + t.getDisplayName() + " &8- &e" + t.getPoints());
+//        }
+//
+//        // --- Spacer
+//        line = setLine(obj, board, line, "&r  ");
+//
+//        // --- Player stats
+//        if (myTeam != null) {
+//            line = setLine(obj, board, line,
+//                    "&7Team: " + myTeam.getColor() + myTeam.getDisplayName());
+//        }
+//        line = setLine(obj, board, line, "&7Punten: &e" + ppoints);
+//        line = setLine(obj, board, line, "&7Munten: &b" + coins);
+//
+//        // --- Bottom spacer
+//        line = setLine(obj, board, line, "&r   ");
+//
+//        player.setScoreboard(board);
+//    }
     public void updatePlayer(Player player) {
         Scoreboard board = boards.computeIfAbsent(player.getUniqueId(),
                 uuid -> Bukkit.getScoreboardManager().getNewScoreboard());
 
+
+        PlayerData pd = plugin.getPlayerDataManager().get(player.getUniqueId());
+        int coins = (pd != null) ? pd.getCoins() : 0;
+        int ppoints = (pd != null) ? pd.getPoints() : 0;
+        KMCTeam myTeam = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
+
+
+        if (myTeam != null) {
+            // Gebruik de displaynaam of kleur-naam als ID voor het team
+            String teamId = myTeam.getDisplayName().replace(" ", "_");
+            Team boardTeam = board.getTeam(teamId);
+            if (boardTeam == null) {
+                boardTeam = board.registerNewTeam(teamId);
+            }
+            boardTeam.setColor(myTeam.getColor());
+            if (!boardTeam.hasEntry(player.getName())) {
+                boardTeam.addEntry(player.getName());
+            }
+        }
+
+
         String objName = "kmc_sidebar";
         Objective obj = board.getObjective(objName);
-
-        // Recreate objective to allow full title/line changes
         if (obj != null) obj.unregister();
+
         obj = board.registerNewObjective(objName, Criteria.DUMMY,
                 MessageUtil.color(plugin.getConfig().getString("scoreboard.title", "&6&lKMC")));
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-        // Gather data
-        boolean active       = plugin.getTournamentManager().isActive();
-        int     round        = plugin.getTournamentManager().getCurrentRound();
-        double  mul          = plugin.getTournamentManager().getMultiplier();
-        String  gameName     = plugin.getGameManager().getActiveGame() != null
-                               ? plugin.getGameManager().getActiveGame().getDisplayName()
-                               : "&8Geen";
 
-        PlayerData pd        = plugin.getPlayerDataManager().get(player.getUniqueId());
-        int coins  = pd != null ? pd.getCoins()  : 0;
-        int ppoints= pd != null ? pd.getPoints() : 0;
-
-        KMCTeam myTeam = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
+        boolean active = plugin.getTournamentManager().isActive();
+        int round = plugin.getTournamentManager().getCurrentRound();
+        double mul = plugin.getTournamentManager().getMultiplier();
+        String gameName = plugin.getGameManager().getActiveGame() != null
+                ? plugin.getGameManager().getActiveGame().getDisplayName()
+                : "&8Geen";
 
         List<KMCTeam> top3 = plugin.getTeamManager().getTeamsSortedByPoints()
                 .stream().limit(3).toList();
 
-        // Build lines (score = display order, highest = top)
         int line = 14;
-
-        // --- Header spacer
         line = setLine(obj, board, line, "&r");
 
-        // --- Tournament status
         if (!active) {
             line = setLine(obj, board, line, "&7Status: &cInactief");
         } else {
@@ -121,10 +203,7 @@ public class ScoreboardManager {
             line = setLine(obj, board, line, "&7Game: &b" + gameName);
         }
 
-        // --- Spacer
         line = setLine(obj, board, line, "&r ");
-
-        // --- Team leaderboard
         line = setLine(obj, board, line, "&6&lTop Teams:");
         for (int i = 0; i < top3.size(); i++) {
             KMCTeam t = top3.get(i);
@@ -133,18 +212,17 @@ public class ScoreboardManager {
                     medal + " " + t.getColor() + t.getDisplayName() + " &8- &e" + t.getPoints());
         }
 
-        // --- Spacer
         line = setLine(obj, board, line, "&r  ");
 
-        // --- Player stats
+
         if (myTeam != null) {
-            line = setLine(obj, board, line,
-                    "&7Team: " + myTeam.getColor() + myTeam.getDisplayName());
+            line = setLine(obj, board, line, "&7Team: " + myTeam.getColor() + myTeam.getDisplayName());
+        } else {
+            line = setLine(obj, board, line, "&7Team: &8Geen");
         }
+
         line = setLine(obj, board, line, "&7Punten: &e" + ppoints);
         line = setLine(obj, board, line, "&7Munten: &b" + coins);
-
-        // --- Bottom spacer
         line = setLine(obj, board, line, "&r   ");
 
         player.setScoreboard(board);
@@ -195,4 +273,5 @@ public class ScoreboardManager {
         if (updateTask != null) updateTask.cancel();
         boards.clear();
     }
+
 }
