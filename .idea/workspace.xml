@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Tablist poging 2">
+    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Randomteams option&#10;Points on Scoreboard">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/KMCCore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/KMCCore.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/api/KMCApi.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/api/KMCApi.java" afterDir="false" />
@@ -41,6 +41,7 @@
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/NPCCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/NPCCommand.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/StatsCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/StatsCommand.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/TournamentCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/TournamentCommand.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/VoteCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/VoteCommand.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/database/DatabaseManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/database/DatabaseManager.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerKillListener.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerKillListener.class" afterDir="false" />
@@ -56,6 +57,7 @@
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager$NpcType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager$NpcType.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/scoreboard/ScoreboardManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/scoreboard/ScoreboardManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/util/ClickableVoteMessage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/util/ClickableVoteMessage.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/plugin.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
@@ -128,7 +130,7 @@
       <updated>1776950267468</updated>
       <workItem from="1776950268560" duration="1795000" />
       <workItem from="1776953045662" duration="390000" />
-      <workItem from="1776953524488" duration="10824000" />
+      <workItem from="1776953524488" duration="11131000" />
     </task>
     <task id="LOCAL-00001" summary="first build">
       <option name="closed" value="true" />
@@ -186,7 +188,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776971050931</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Randomteams option&#10;Points on Scoreboard">
+      <option name="closed" value="true" />
+      <created>1776974685649</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1776974685649</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -196,6 +206,7 @@
     <MESSAGE value="first build" />
     <MESSAGE value="Tablist" />
     <MESSAGE value="Tablist poging 2" />
-    <option name="LAST_COMMIT_MESSAGE" value="Tablist poging 2" />
+    <MESSAGE value="Randomteams option&#10;Points on Scoreboard" />
+    <option name="LAST_COMMIT_MESSAGE" value="Randomteams option&#10;Points on Scoreboard" />
   </component>
 </project>
