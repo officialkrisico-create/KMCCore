@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Tablist">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TabListManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TabListManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/scoreboard/ScoreboardManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/scoreboard/ScoreboardManager.java" afterDir="false" />
-    </list>
+    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Tablist poging 2" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -75,7 +71,7 @@
       <updated>1776950267468</updated>
       <workItem from="1776950268560" duration="1795000" />
       <workItem from="1776953045662" duration="390000" />
-      <workItem from="1776953524488" duration="8225000" />
+      <workItem from="1776953524488" duration="8554000" />
     </task>
     <task id="LOCAL-00001" summary="first build">
       <option name="closed" value="true" />
@@ -109,7 +105,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776961016535</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Tablist poging 2">
+      <option name="closed" value="true" />
+      <created>1776970683306</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776970683306</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -118,6 +122,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first build" />
     <MESSAGE value="Tablist" />
-    <option name="LAST_COMMIT_MESSAGE" value="Tablist" />
+    <MESSAGE value="Tablist poging 2" />
+    <option name="LAST_COMMIT_MESSAGE" value="Tablist poging 2" />
   </component>
 </project>
