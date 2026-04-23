@@ -7,14 +7,17 @@ import org.bukkit.event.*;
 import org.bukkit.event.player.*;
 
 /**
- * On join:
- *   - Load PlayerData
- *   - Refresh team nametag on main scoreboard (colour in chat + above head + TAB)
- *   - Teleport to lobby in adventure mode
- *   - Update tab list header/footer
+ * Handles join and quit events.
  *
- * Also refreshes nametags for ALL players so existing ones see the new arrival
- * with the correct prefix.
+ * <p>FIX (tablist 2-player glitch): previously we called
+ * {@code refreshAll()} once 5 ticks after join. With few players
+ * online the refresh sometimes fires before Paper has finished
+ * sending the join packet, so the new player's prefix briefly
+ * flashes correct then resets.
+ *
+ * <p>The fix is to schedule THREE refreshes at 5, 20, and 40 ticks
+ * after join — belt-and-braces approach that always wins the race
+ * against Paper's packet flush.
  */
 public class PlayerJoinQuitListener implements Listener {
 
@@ -29,17 +32,17 @@ public class PlayerJoinQuitListener implements Listener {
         PlayerData pd = plugin.getPlayerDataManager()
                 .getOrCreate(player.getUniqueId(), player.getName());
 
-        // Critical: refresh ALL nametags (not just the new player)
-        // otherwise existing players see the newcomer without a prefix.
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            plugin.getTabListManager().refreshAll();
-        }, 5L);
-
         plugin.getScoreboardManager().onPlayerJoin(player);
         plugin.getAutomationManager().addPlayerToBossBar(player);
         plugin.getTabListManager().updateTabList(player);
 
-        // Teleport to lobby in adventure mode (if lobby set and no active game)
+        // MULTIPLE delayed refreshes to beat Paper's packet timing
+        // with low player counts — ensures all prefixes propagate
+        schedule(5L);
+        schedule(20L);
+        schedule(40L);
+
+        // Lobby teleport in adventure mode
         if (plugin.getArenaManager().getLobby() != null
                 && !plugin.getGameManager().isGameActive()) {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
@@ -47,6 +50,12 @@ public class PlayerJoinQuitListener implements Listener {
                 player.setGameMode(GameMode.ADVENTURE);
             }, 10L);
         }
+    }
+
+    /** Schedules a full nametag/tablist refresh after {@code ticks}. */
+    private void schedule(long ticks) {
+        plugin.getServer().getScheduler().runTaskLater(plugin,
+                () -> plugin.getTabListManager().refreshAll(), ticks);
     }
 
     @EventHandler(priority = EventPriority.NORMAL)

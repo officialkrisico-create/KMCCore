@@ -2,17 +2,20 @@ package nl.kmc.kmccore.managers;
 
 import nl.kmc.kmccore.KMCCore;
 import nl.kmc.kmccore.models.KMCTeam;
-import nl.kmc.kmccore.models.PlayerData;
 import nl.kmc.kmccore.util.AnnouncementUtil;
 import nl.kmc.kmccore.util.MessageUtil;
 import org.bukkit.Bukkit;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 /**
- * Manages the overall KMC tournament lifecycle.
+ * Tournament lifecycle manager.
  *
- * <p>Key feature: {@link #endTournament()} resets ALL points and wins to zero
- * (for the next event), but preserves lifetime stats like bestWinStreak.
- * A full wipe is available via {@link #hardReset()}.
+ * <p>FIX: {@link #hardReset()} now also wipes all team memberships,
+ * not just points. Members get removed from every team and their
+ * playerdata.teamId is cleared.
  */
 public class TournamentManager {
 
@@ -28,7 +31,7 @@ public class TournamentManager {
     }
 
     private void load() {
-        active       = Boolean.parseBoolean(plugin.getDatabaseManager()
+        active = Boolean.parseBoolean(plugin.getDatabaseManager()
                 .getTournamentValue("active",
                         String.valueOf(plugin.getConfig().getBoolean("tournament.active", false))));
         currentRound = Integer.parseInt(plugin.getDatabaseManager()
@@ -41,16 +44,11 @@ public class TournamentManager {
         plugin.getDatabaseManager().setTournamentValue("current_round", String.valueOf(currentRound));
     }
 
-    // ----------------------------------------------------------------
-    // Start / Stop
-    // ----------------------------------------------------------------
-
     public boolean start() {
         if (active) return false;
         active       = true;
         currentRound = 1;
         save();
-
         AnnouncementUtil.broadcastTitle(plugin, "announcements.tournament-start", null);
         Bukkit.broadcastMessage(MessageUtil.get("broadcast.tournament-start"));
         plugin.getScoreboardManager().refreshAll();
@@ -63,50 +61,36 @@ public class TournamentManager {
         active = false;
         save();
         Bukkit.broadcastMessage(MessageUtil.color(
-                plugin.getConfig().getString("settings.prefix", "&6[KMC] ") +
-                "&cHet toernooi is gestopt."));
+                plugin.getConfig().getString("settings.prefix", "&6[KMC] ")
+                + "&cHet toernooi is gestopt."));
         plugin.getScoreboardManager().refreshAll();
         return true;
     }
 
-    /**
-     * Ends the tournament NICELY: announces the winner, then resets all
-     * tournament points and team wins to zero so a new event can start fresh.
-     * Lifetime stats (bestWinStreak, winsPerGame, playtime) are kept.
-     */
     public void endTournament() {
         active = false;
         save();
 
-        // Find winning team
         KMCTeam winner = plugin.getTeamManager().getTeamsSortedByPoints().stream()
                 .findFirst().orElse(null);
-        String winnerName = winner != null
-                ? winner.getColor() + winner.getDisplayName()
-                : "Onbekend";
+        String winnerName = winner != null ? winner.getColor() + winner.getDisplayName() : "Onbekend";
 
-        // Big announcement
         Bukkit.broadcastMessage(MessageUtil.color("&6&l═══════════════════════════"));
         Bukkit.broadcastMessage(MessageUtil.color("&6&l   TOERNOOI AFGELOPEN!"));
         Bukkit.broadcastMessage(MessageUtil.color("&eWinnaar: " + winnerName));
         Bukkit.broadcastMessage(MessageUtil.color("&6&l═══════════════════════════"));
 
-        // Soft reset — zeros points/wins, keeps lifetime stats
         plugin.getDatabaseManager().resetAll(false);
         plugin.getTeamManager().resetScores();
         plugin.getPlayerDataManager().resetSeasonStats();
+        plugin.getGameManager().resetPlayedGames();
         currentRound = 1;
         save();
 
         plugin.getScoreboardManager().refreshAll();
         plugin.getTabListManager().refreshAll();
-
         Bukkit.broadcastMessage(MessageUtil.color("&aAlle punten zijn gereset. Klaar voor het volgende toernooi!"));
     }
-
-    // ----------------------------------------------------------------
-    // Rounds
-    // ----------------------------------------------------------------
 
     public boolean nextRound() {
         if (currentRound >= totalRounds) return false;
@@ -131,11 +115,7 @@ public class TournamentManager {
         return true;
     }
 
-    // ----------------------------------------------------------------
-    // Resets
-    // ----------------------------------------------------------------
-
-    /** Soft reset — zero tournament data, keep lifetime stats. */
+    /** Soft reset — zero points/stats, keep lifetime stats + team assignments. */
     public void reset() {
         active       = false;
         currentRound = 1;
@@ -147,22 +127,45 @@ public class TournamentManager {
         plugin.getScoreboardManager().refreshAll();
     }
 
-    /** Hard reset — wipes EVERYTHING including lifetime stats. */
+    /**
+     * Hard reset: wipes EVERYTHING including team memberships.
+     *
+     * <p>Steps:
+     * <ol>
+     *   <li>Kick every player out of every team</li>
+     *   <li>Zero all team points/wins</li>
+     *   <li>Wipe all player stats including lifetime</li>
+     *   <li>Clear tournament played-games log</li>
+     *   <li>Refresh nametags and sidebar</li>
+     * </ol>
+     */
     public void hardReset() {
         active       = false;
         currentRound = 1;
         save();
+
+        // 1. Remove every player from every team
+        for (KMCTeam t : plugin.getTeamManager().getAllTeams()) {
+            List<UUID> members = new ArrayList<>(t.getMembers()); // avoid concurrent mod
+            for (UUID uuid : members) {
+                plugin.getTeamManager().removePlayerFromTeam(uuid);
+            }
+        }
+
+        // 2-4. Wipe data
         plugin.getDatabaseManager().resetAll(true);
         plugin.getTeamManager().resetScores();
         plugin.getPlayerDataManager().resetAll();
         plugin.getGameManager().resetPlayedGames();
+
+        // 5. Refresh everything visible
         plugin.getScoreboardManager().refreshAll();
+        plugin.getTabListManager().refreshAllNametags();
+        plugin.getTabListManager().refreshAll();
     }
 
     public boolean isActive()        { return active; }
     public int     getCurrentRound() { return currentRound; }
     public int     getTotalRounds()  { return totalRounds; }
-    public double  getMultiplier()   {
-        return plugin.getPointsManager().getMultiplierForRound(currentRound);
-    }
+    public double  getMultiplier()   { return plugin.getPointsManager().getMultiplierForRound(currentRound); }
 }

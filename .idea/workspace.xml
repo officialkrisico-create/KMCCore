@@ -4,7 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Randomteams option&#10;Points on Scoreboard" />
+    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Randomteams option&#10;Points on Scoreboard">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/KMCCore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/KMCCore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/RandomTeamsCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/RandomTeamsCommand.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/AutomationManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/AutomationManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TournamentManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TournamentManager.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -72,7 +79,7 @@
       <updated>1776950267468</updated>
       <workItem from="1776950268560" duration="1795000" />
       <workItem from="1776953045662" duration="390000" />
-      <workItem from="1776953524488" duration="11440000" />
+      <workItem from="1776953524488" duration="13502000" />
     </task>
     <task id="LOCAL-00001" summary="first build">
       <option name="closed" value="true" />
@@ -154,7 +161,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776974999420</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Randomteams option&#10;Points on Scoreboard">
+      <option name="closed" value="true" />
+      <created>1776975198212</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1776975198212</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

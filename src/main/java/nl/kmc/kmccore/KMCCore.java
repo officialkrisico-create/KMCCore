@@ -10,9 +10,6 @@ import nl.kmc.kmccore.scoreboard.ScoreboardManager;
 import nl.kmc.kmccore.util.MessageUtil;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * KMCCore main class. Init order must be preserved.
- */
 public final class KMCCore extends JavaPlugin {
 
     private static KMCCore instance;
@@ -57,7 +54,6 @@ public final class KMCCore extends JavaPlugin {
         npcManager        = new NPCManager(this);
         automationManager = new AutomationManager(this);
 
-        // Vote GUI listener — kept as a field so GameManager can call it
         voteGuiListener = new VoteGuiListener(this);
 
         registerCommands();
@@ -109,6 +105,7 @@ public final class KMCCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerKillListener(this),      this);
         getServer().getPluginManager().registerEvents(new VoteListener(this),            this);
         getServer().getPluginManager().registerEvents(voteGuiListener,                    this);
+        getServer().getPluginManager().registerEvents(new LobbyProtectionListener(this), this);
     }
 
     public static KMCCore getInstance() { return instance; }

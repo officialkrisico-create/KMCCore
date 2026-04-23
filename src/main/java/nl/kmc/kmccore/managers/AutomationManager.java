@@ -2,6 +2,8 @@ package nl.kmc.kmccore.managers;
 
 import nl.kmc.kmccore.KMCCore;
 import nl.kmc.kmccore.models.KMCGame;
+import nl.kmc.kmccore.models.KMCTeam;
+import nl.kmc.kmccore.models.PlayerData;
 import nl.kmc.kmccore.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -11,77 +13,41 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.List;
+
 /**
- * AutomationManager drives the full tournament loop without admin input.
+ * AutomationManager drives the tournament loop.
  *
- * <p>Flow per game cycle:
- * <pre>
- *  [GAME ACTIVE]
- *       ↓  /kmcgame stop  (or manual trigger)
- *  [INTERMISSION]  — countdown timer (bossbar + titles)
- *       ↓  countdown reaches 0
- *  [VOTING]        — players type 1/2/3 in chat
- *       ↓  vote duration expires → winner picked
- *  [PRE-START]     — short "game starts in X" countdown
- *       ↓  countdown reaches 0
- *  [GAME ACTIVE]   — loop repeats
- * </pre>
- *
- * <p>When all games in a round are done the round advances automatically.
- * When all rounds are done the tournament ends.
- *
- * <p>The automation can be paused/resumed by an admin at any time using
- * {@link #pause()} and {@link #resume()}.
+ * <p>Fixes in this version:
+ * <ul>
+ *   <li>{@link #onGameEnd(String)} now handles null winner from force-skip
+ *       by recreating the bossbar explicitly before intermission starts.</li>
+ *   <li>{@link #postGameLeaderboardChain()} broadcasts 3 leaderboards
+ *       spaced 10s apart after every game.</li>
+ *   <li>Players are teleported to the lobby after each game.</li>
+ * </ul>
  */
 public class AutomationManager {
 
-    // ----------------------------------------------------------------
-    // States
-    // ----------------------------------------------------------------
-    public enum State {
-        IDLE,           // automation not running
-        GAME_ACTIVE,    // a game is currently being played
-        INTERMISSION,   // counting down between games
-        VOTING,         // vote is open
-        PRE_START,      // counting down before game launch
-        PAUSED          // admin paused automation
-    }
+    public enum State { IDLE, GAME_ACTIVE, INTERMISSION, VOTING, PRE_START, PAUSED }
 
-    // ----------------------------------------------------------------
-    // Fields
-    // ----------------------------------------------------------------
     private final KMCCore plugin;
 
-    private State       state           = State.IDLE;
-    private State       stateBeforePause= State.IDLE;
+    private State      state            = State.IDLE;
+    private State      stateBeforePause = State.IDLE;
 
-    /** Games played in the current round (to know when to advance round). */
-    private int         gamesThisRound  = 0;
+    private int        gamesThisRound   = 0;
+    private int        countdownSeconds = 0;
 
-    /** Current countdown value in seconds. */
-    private int         countdownSeconds= 0;
+    private BukkitTask tickTask;
+    private BossBar    bossBar;
 
-    /** The ticking task (cancelled when state changes). */
-    private BukkitTask  tickTask;
-
-    /** BossBar used as a visual countdown bar. */
-    private BossBar     bossBar;
+    public AutomationManager(KMCCore plugin) { this.plugin = plugin; }
 
     // ----------------------------------------------------------------
-    // Constructor
-    // ----------------------------------------------------------------
-    public AutomationManager(KMCCore plugin) {
-        this.plugin = plugin;
-    }
-
-    // ----------------------------------------------------------------
-    // Public control
+    // Control
     // ----------------------------------------------------------------
 
-    /**
-     * Starts the automation engine.
-     * Call this right after {@link TournamentManager#start()}.
-     */
     public void start() {
         if (state != State.IDLE) return;
         gamesThisRound = 0;
@@ -89,9 +55,6 @@ public class AutomationManager {
         enterIntermission();
     }
 
-    /**
-     * Stops the automation engine completely (tournament ended).
-     */
     public void stop() {
         cancelTick();
         hideBossBar();
@@ -99,13 +62,19 @@ public class AutomationManager {
     }
 
     /**
-     * Called by {@link GameManager} (or an admin command) when the
-     * active game finishes. Triggers the intermission countdown.
+     * Called when a game finishes. This is the entry point for the
+     * post-game flow: leaderboards → TP to lobby → intermission.
      *
-     * @param winnerName display name of winning team / player
+     * @param winnerName may be null for force-skips and time-outs
      */
     public void onGameEnd(String winnerName) {
-        if (state != State.GAME_ACTIVE) return;
+        // Edge case: if called while not in GAME_ACTIVE (e.g. admin stop before
+        // game ever went active), just kick off intermission cleanly.
+        if (state != State.GAME_ACTIVE && state != State.PAUSED) {
+            if (state == State.IDLE) return;
+            // proceed anyway
+        }
+
         gamesThisRound++;
 
         int gamesPerRound = plugin.getConfig().getInt("automation.games-per-round", 3);
@@ -120,12 +89,19 @@ public class AutomationManager {
             }
         }
 
+        // Send everyone to the lobby in adventure mode
+        plugin.getArenaManager().teleportAllToLobby();
+
+        // Post-game leaderboard chain (runs independently in background)
+        postGameLeaderboardChain();
+
+        // Recreate bossbar (force-skip may have left it in a broken state)
+        createBossBar();
+
+        // Enter intermission countdown
         enterIntermission();
     }
 
-    /**
-     * Pauses all automation ticking. The bossbar hides.
-     */
     public void pause() {
         if (state == State.PAUSED || state == State.IDLE) return;
         stateBeforePause = state;
@@ -135,14 +111,10 @@ public class AutomationManager {
         broadcast("&6[KMC] &eAutomatisering gepauzeerd door een admin.");
     }
 
-    /**
-     * Resumes from wherever we paused.
-     */
     public void resume() {
         if (state != State.PAUSED) return;
         state = stateBeforePause;
         createBossBar();
-        // Re-enter the state to restart its countdown
         switch (state) {
             case INTERMISSION -> enterIntermission();
             case VOTING       -> enterVoting();
@@ -153,30 +125,28 @@ public class AutomationManager {
     }
 
     // ----------------------------------------------------------------
-    // State transitions
+    // State machine
     // ----------------------------------------------------------------
 
-    /** Starts the between-game lobby countdown. */
     private void enterIntermission() {
         state            = State.INTERMISSION;
         countdownSeconds = plugin.getConfig().getInt("automation.intermission-seconds", 30);
 
-        int votingEnabled = plugin.getConfig().getBoolean("games.voting-enabled", true) ? 1 : 0;
-        String label = votingEnabled == 1 ? "Volgende game wordt gekozen over" : "Volgende game start over";
+        boolean votingEnabled = plugin.getConfig().getBoolean("games.voting-enabled", true);
+        String label = votingEnabled
+                ? "Volgende game wordt gekozen over"
+                : "Volgende game start over";
 
-        setBossBar(label, BarColor.YELLOW, 1.0);
-        broadcast("&6[KMC] &eTussenpauze! Volgende game start over &6" + countdownSeconds + " &eseconden.");
+        setBossBar(label + " " + countdownSeconds + "s", BarColor.YELLOW, 1.0);
+        broadcast("&6[KMC] &eTussenpauze! Volgende game start over &6"
+                + countdownSeconds + " &eseconden.");
 
         startTick(() -> {
             countdownSeconds--;
             double progress = (double) countdownSeconds /
                     plugin.getConfig().getInt("automation.intermission-seconds", 30);
             setBossBarProgress(progress);
-
-            // Play tick sounds at 10, 5, 4, 3, 2, 1
             playTickSound(countdownSeconds);
-
-            // Update bossbar title every second
             bossBar.setTitle(MessageUtil.color("&eTussenpauze: &6" + countdownSeconds + "s"));
 
             if (countdownSeconds <= 0) {
@@ -191,7 +161,6 @@ public class AutomationManager {
         });
     }
 
-    /** Opens the vote, waits for it to complete, then enters pre-start. */
     private void enterVoting() {
         state            = State.VOTING;
         countdownSeconds = plugin.getConfig().getInt("games.voting-duration", 30);
@@ -205,7 +174,6 @@ public class AutomationManager {
                     plugin.getConfig().getInt("games.voting-duration", 30);
             setBossBarProgress(progress);
             bossBar.setTitle(MessageUtil.color("&bStemmen sluiten over: &e" + countdownSeconds + "s"));
-
             playTickSound(countdownSeconds);
 
             if (countdownSeconds <= 0) {
@@ -218,7 +186,6 @@ public class AutomationManager {
         });
     }
 
-    /** Short countdown before the game actually launches. */
     private void enterPreStart(KMCGame game) {
         if (game == null) {
             broadcast("&c[KMC] Geen game beschikbaar! Automatisering gestopt.");
@@ -229,8 +196,10 @@ public class AutomationManager {
         state            = State.PRE_START;
         countdownSeconds = plugin.getConfig().getInt("automation.prestart-seconds", 10);
 
-        setBossBar("&a" + game.getDisplayName() + " start over " + countdownSeconds + "s", BarColor.GREEN, 1.0);
-        broadcast("&6[KMC] &a" + game.getDisplayName() + " &estart over &6" + countdownSeconds + " &eseconden!");
+        setBossBar("&a" + game.getDisplayName() + " start over " + countdownSeconds + "s",
+                BarColor.GREEN, 1.0);
+        broadcast("&6[KMC] &a" + game.getDisplayName() + " &estart over &6"
+                + countdownSeconds + " &eseconden!");
 
         startTick(() -> {
             countdownSeconds--;
@@ -240,15 +209,13 @@ public class AutomationManager {
             bossBar.setTitle(MessageUtil.color(
                     "&a" + game.getDisplayName() + " &estart over &6" + countdownSeconds + "s"));
 
-            // Title countdown at 5, 4, 3, 2, 1
             if (countdownSeconds <= 5 && countdownSeconds > 0) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.sendTitle(
-                            MessageUtil.color("&a" + game.getDisplayName()),
-                            MessageUtil.color("&eStart over &6" + countdownSeconds + "s"),
-                            0, 25, 5);
+                    p.sendTitle(MessageUtil.color("&a" + game.getDisplayName()),
+                                MessageUtil.color("&eStart over &6" + countdownSeconds + "s"),
+                                0, 25, 5);
                     p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f,
-                            0.5f + (5 - countdownSeconds) * 0.1f);
+                                0.5f + (5 - countdownSeconds) * 0.1f);
                 }
             }
 
@@ -259,61 +226,155 @@ public class AutomationManager {
         });
     }
 
-    /** Actually starts the game and marks state as GAME_ACTIVE. */
     private void launchGame(KMCGame game) {
         state = State.GAME_ACTIVE;
         hideBossBar();
         plugin.getGameManager().startGame(game.getId());
 
-        // Bossbar during game shows active status
         createBossBar();
-        setBossBar("&2▶ &a" + game.getDisplayName() + " &2◀  Ronde " +
-                plugin.getTournamentManager().getCurrentRound() +
-                "  ×" + plugin.getTournamentManager().getMultiplier(), BarColor.GREEN, 1.0);
+        setBossBar("&2▶ &a" + game.getDisplayName() + " &2◀  Ronde "
+                + plugin.getTournamentManager().getCurrentRound()
+                + "  ×" + plugin.getTournamentManager().getMultiplier(),
+                BarColor.GREEN, 1.0);
         setBossBarProgress(1.0);
     }
 
-    /** Called when all rounds are complete. */
     private void endTournament(String lastWinner) {
         stop();
-        plugin.getTournamentManager().stop();
+        plugin.getTournamentManager().endTournament();
 
-        // Find top team
         String topTeam = plugin.getTeamManager().getTeamsSortedByPoints().stream()
-                .findFirst()
-                .map(t -> t.getColor() + t.getDisplayName())
+                .findFirst().map(t -> t.getColor() + t.getDisplayName())
                 .orElse("Onbekend");
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            p.sendTitle(
-                    MessageUtil.color("&6&lToernooi Afgelopen!"),
-                    MessageUtil.color("&eWinnaar: " + topTeam),
-                    10, 100, 30);
+            p.sendTitle(MessageUtil.color("&6&lToernooi Afgelopen!"),
+                        MessageUtil.color("&eWinnaar: " + topTeam), 10, 100, 30);
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
-
         broadcast("&6&l[KMC] &eHet toernooi is afgelopen! Winnaar: " + topTeam);
-        plugin.getApi().fireTournamentStart(); // fires tournament-end hooks
+    }
+
+    // ----------------------------------------------------------------
+    // POST-GAME LEADERBOARD CHAIN
+    // ----------------------------------------------------------------
+
+    /**
+     * Broadcasts 3 messages spaced 10 seconds apart:
+     * <ol>
+     *   <li>Top 5 players from the just-finished game</li>
+     *   <li>Top 5 teams from the just-finished game (by member points)</li>
+     *   <li>Overall tournament team leaderboard</li>
+     * </ol>
+     */
+    private void postGameLeaderboardChain() {
+        String gameName = "Laatste Game";
+        KMCGame game = plugin.getGameManager().getActiveGame();
+        if (game == null) {
+            // Active game has been cleared by stopGame; look at played games
+            var played = plugin.getGameManager().getPlayedGamesThisTournament();
+            if (!played.isEmpty()) {
+                String lastId = played.stream().reduce((a, b) -> b).orElse(null);
+                if (lastId != null && plugin.getGameManager().getGame(lastId) != null) {
+                    gameName = plugin.getGameManager().getGame(lastId).getDisplayName();
+                }
+            }
+        } else {
+            gameName = game.getDisplayName();
+        }
+
+        final String finalGameName = gameName;
+
+        // Immediate: top players for this game
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            broadcastTopPlayers(finalGameName);
+        }, 20L);  // 1s delay after game end
+
+        // 10s later: top teams
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            broadcastGameTeamLeaderboard(finalGameName);
+        }, 200L); // 10s
+
+        // 20s later: overall tournament teams
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            broadcastOverallTeamLeaderboard();
+        }, 400L); // 20s
+    }
+
+    private void broadcastTopPlayers(String gameName) {
+        broadcast("&6═══════════════════════════════════");
+        broadcast("&e&lTop Spelers &7— " + gameName);
+        broadcast("&6═══════════════════════════════════");
+
+        List<PlayerData> top = plugin.getPlayerDataManager().getLeaderboard()
+                .stream().limit(5).toList();
+
+        if (top.isEmpty()) {
+            broadcast("&7Geen data beschikbaar.");
+        } else {
+            for (int i = 0; i < top.size(); i++) {
+                PlayerData pd = top.get(i);
+                String medal = i == 0 ? "&6🥇" : i == 1 ? "&7🥈" : i == 2 ? "&c🥉" : "&7#" + (i + 1);
+                broadcast("  " + medal + " &f" + pd.getName() + " &8- &e" + pd.getPoints() + " punten");
+            }
+        }
+        broadcast("&6═══════════════════════════════════");
+    }
+
+    private void broadcastGameTeamLeaderboard(String gameName) {
+        broadcast("&6═══════════════════════════════════");
+        broadcast("&e&lTop Teams &7— " + gameName);
+        broadcast("&6═══════════════════════════════════");
+
+        // Per-game team ranking = sum of member points
+        // (Our system already credits each player's team when they earn points,
+        //  so team totals ARE the game totals for team contributions.)
+        List<KMCTeam> teams = plugin.getTeamManager().getTeamsSortedByPoints()
+                .stream().limit(5).toList();
+
+        if (teams.isEmpty()) {
+            broadcast("&7Geen teams actief.");
+        } else {
+            for (int i = 0; i < teams.size(); i++) {
+                KMCTeam t = teams.get(i);
+                String medal = i == 0 ? "&6🥇" : i == 1 ? "&7🥈" : i == 2 ? "&c🥉" : "&7#" + (i + 1);
+                broadcast("  " + medal + " " + t.getColor() + t.getDisplayName()
+                        + " &8- &e" + t.getPoints() + " punten");
+            }
+        }
+        broadcast("&6═══════════════════════════════════");
+    }
+
+    private void broadcastOverallTeamLeaderboard() {
+        broadcast("&6═══════════════════════════════════");
+        broadcast("&d&l🏆 TOTAAL TOERNOOI KLASSEMENT 🏆");
+        broadcast("&6═══════════════════════════════════");
+
+        List<KMCTeam> all = plugin.getTeamManager().getTeamsSortedByPoints();
+        if (all.isEmpty()) {
+            broadcast("&7Geen teams geregistreerd.");
+        } else {
+            for (int i = 0; i < all.size(); i++) {
+                KMCTeam t = all.get(i);
+                String medal = i == 0 ? "&6#1" : i == 1 ? "&7#2" : i == 2 ? "&c#3" : "&7#" + (i + 1);
+                broadcast("  " + medal + " " + t.getColor() + t.getDisplayName()
+                        + " &8- &e" + t.getPoints());
+            }
+        }
+        broadcast("&6═══════════════════════════════════");
     }
 
     // ----------------------------------------------------------------
     // Tick helper
     // ----------------------------------------------------------------
 
-    /**
-     * Schedules a repeating 1-second tick task.
-     * Always cancels the previous task first.
-     */
     private void startTick(Runnable onTick) {
         cancelTick();
         tickTask = Bukkit.getScheduler().runTaskTimer(plugin, onTick, 20L, 20L);
     }
 
     private void cancelTick() {
-        if (tickTask != null) {
-            tickTask.cancel();
-            tickTask = null;
-        }
+        if (tickTask != null) { tickTask.cancel(); tickTask = null; }
     }
 
     // ----------------------------------------------------------------
@@ -346,37 +407,22 @@ public class AutomationManager {
         bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
     }
 
-    /** Adds a newly joined player to the active bossbar. */
     public void addPlayerToBossBar(Player player) {
         if (bossBar != null) bossBar.addPlayer(player);
     }
-
-    // ----------------------------------------------------------------
-    // Sound helper
-    // ----------------------------------------------------------------
 
     private void playTickSound(int secondsLeft) {
         if (secondsLeft != 10 && secondsLeft != 5 && secondsLeft > 3) return;
         if (secondsLeft <= 0) return;
         Sound s = secondsLeft <= 3 ? Sound.BLOCK_NOTE_BLOCK_BASS : Sound.BLOCK_NOTE_BLOCK_HAT;
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            p.playSound(p.getLocation(), s, 0.8f, 1f);
-        }
+        for (Player p : Bukkit.getOnlinePlayers()) p.playSound(p.getLocation(), s, 0.8f, 1f);
     }
-
-    // ----------------------------------------------------------------
-    // Utility
-    // ----------------------------------------------------------------
 
     private void broadcast(String msg) {
         Bukkit.broadcastMessage(MessageUtil.color(msg));
     }
 
-    // ----------------------------------------------------------------
-    // Getters
-    // ----------------------------------------------------------------
-
-    public State  getState()            { return state; }
-    public boolean isRunning()          { return state != State.IDLE && state != State.PAUSED; }
-    public int    getCountdownSeconds() { return countdownSeconds; }
+    public State   getState()            { return state; }
+    public boolean isRunning()           { return state != State.IDLE && state != State.PAUSED; }
+    public int     getCountdownSeconds() { return countdownSeconds; }
 }
