@@ -16,6 +16,7 @@ C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\VoteComma
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\database\DatabaseManager.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\KMCCore.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\ChatListener.java
+C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\LobbyProtectionListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\PlayerJoinQuitListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\PlayerKillListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\VoteGuiListener.java
