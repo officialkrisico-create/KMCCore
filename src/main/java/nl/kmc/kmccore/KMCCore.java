@@ -9,38 +9,14 @@ import nl.kmc.kmccore.npc.NPCManager;
 import nl.kmc.kmccore.scoreboard.ScoreboardManager;
 import nl.kmc.kmccore.util.MessageUtil;
 import org.bukkit.plugin.java.JavaPlugin;
-import nl.kmc.kmccore.managers.AutomationManager;
-import nl.kmc.kmccore.managers.TabListManager;
 
 /**
- * KMCCore - Main plugin class for the Krizi Minecraft Championship.
- *
- * <p>This plugin manages:
- * <ul>
- *   <li>Teams and team chat</li>
- *   <li>Individual player statistics (coins, points, kills, wins)</li>
- *   <li>Game randomizer and voting</li>
- *   <li>Points/multiplier system per round</li>
- *   <li>Tournament lifecycle management</li>
- *   <li>Live scoreboards and leaderboard NPCs</li>
- *   <li>SQLite / YAML persistence</li>
- *   <li>API hooks for external integrations (Twitch, chat bots, etc.)</li>
- * </ul>
- *
- * <p>Architecture: each feature area has its own Manager class.
- * The plugin acts as a dependency-injection root; managers reference
- * each other only via this class so they stay loosely coupled.
+ * KMCCore main class. Init order must be preserved.
  */
 public final class KMCCore extends JavaPlugin {
 
-    // ----------------------------------------------------------------
-    // Singleton instance – use KMCCore.getInstance() from other classes
-    // ----------------------------------------------------------------
     private static KMCCore instance;
 
-    // ----------------------------------------------------------------
-    // Managers (one per feature area)
-    // ----------------------------------------------------------------
     private DatabaseManager    databaseManager;
     private TeamManager        teamManager;
     private PlayerDataManager  playerDataManager;
@@ -53,65 +29,47 @@ public final class KMCCore extends JavaPlugin {
     private TabListManager     tabListManager;
     private ArenaManager       arenaManager;
     private SchematicManager   schematicManager;
+    private VoteGuiListener    voteGuiListener;
 
-    // ----------------------------------------------------------------
-    // Public API surface (for external plugins / integrations)
-    // ----------------------------------------------------------------
     private KMCApi api;
 
-    // ----------------------------------------------------------------
-    // Lifecycle
-    // ----------------------------------------------------------------
-
-    @Override
-    public void onLoad() {
-        instance = this;
-    }
+    @Override public void onLoad() { instance = this; }
 
     @Override
     public void onEnable() {
-        // 1. Save default configs
         saveDefaultConfig();
         saveResource("messages.yml", false);
+        saveResource("points.yml",   false);
 
-        // 2. Utility setup (needs config loaded first)
         MessageUtil.init(this);
 
-        // 3. Database (SQLite or YAML)
-        databaseManager = new DatabaseManager(this);
+        databaseManager   = new DatabaseManager(this);
         databaseManager.connect();
-
-        // 4. Core data managers
         teamManager       = new TeamManager(this);
-        tabListManager    = new TabListManager(this);
-        schematicManager  = new SchematicManager(this);
-        arenaManager      = new ArenaManager(this);
         playerDataManager = new PlayerDataManager(this);
         pointsManager     = new PointsManager(this);
         tournamentManager = new TournamentManager(this);
         gameManager       = new GameManager(this);
-
-        // 5. UI managers
+        schematicManager  = new SchematicManager(this);
+        arenaManager      = new ArenaManager(this);
+        tabListManager    = new TabListManager(this);
         scoreboardManager = new ScoreboardManager(this);
         npcManager        = new NPCManager(this);
         automationManager = new AutomationManager(this);
 
-        // 6. Register commands
-        registerCommands();
+        // Vote GUI listener — kept as a field so GameManager can call it
+        voteGuiListener = new VoteGuiListener(this);
 
-        // 7. Register listeners
+        registerCommands();
         registerListeners();
 
-        // 8. Public API
         api = new KMCApi(this);
 
         getLogger().info("KMCCore v" + getDescription().getVersion() + " enabled!");
-        getLogger().info("Tournament: " + getConfig().getString("tournament.name"));
     }
 
     @Override
     public void onDisable() {
-        // Save all in-memory data before shutting down
         if (playerDataManager != null) playerDataManager.saveAll();
         if (teamManager       != null) teamManager.saveAll();
         if (tournamentManager != null) tournamentManager.save();
@@ -120,63 +78,40 @@ public final class KMCCore extends JavaPlugin {
         if (scoreboardManager != null) scoreboardManager.cleanup();
         if (npcManager        != null) npcManager.save();
         if (databaseManager   != null) databaseManager.disconnect();
-
-        getLogger().info("KMCCore disabled. All data saved.");
+        getLogger().info("KMCCore disabled.");
     }
 
-    // ----------------------------------------------------------------
-    // Private helpers
-    // ----------------------------------------------------------------
-
-    /** Register all command executors. */
     private void registerCommands() {
         getCommand("kmcteam").setExecutor(new TeamCommand(this));
         getCommand("kmcteam").setTabCompleter(new TeamCommand(this));
-
         getCommand("kmcstats").setExecutor(new StatsCommand(this));
-
-        getCommand("kmccoins").setExecutor(new CoinsCommand(this));
-        getCommand("kmccoins").setTabCompleter(new CoinsCommand(this));
-
         getCommand("kmctournament").setExecutor(new TournamentCommand(this));
-
         getCommand("kmcgame").setExecutor(new GameCommand(this));
         getCommand("kmcgame").setTabCompleter(new GameCommand(this));
-
         getCommand("kmclb").setExecutor(new LeaderboardCommand(this));
-
         getCommand("kmcnpc").setExecutor(new NPCCommand(this));
-
         getCommand("kmcround").setExecutor(new RoundCommand(this));
-
         getCommand("kmcpoints").setExecutor(new PointsCommand(this));
         getCommand("kmcpoints").setTabCompleter(new PointsCommand(this));
-
         getCommand("tc").setExecutor(new TeamChatCommand(this));
-
         getCommand("kmcvote").setExecutor(new VoteCommand(this));
-
         getCommand("kmcauto").setExecutor(new AutomationCommand(this));
         getCommand("kmcauto").setTabCompleter(new AutomationCommand(this));
-
         getCommand("kmcarena").setExecutor(new ArenaCommand(this));
         getCommand("kmcarena").setTabCompleter(new ArenaCommand(this));
+        getCommand("kmclobby").setExecutor(new LobbyCommand(this));
+        getCommand("kmcrandomteams").setExecutor(new RandomTeamsCommand(this));
     }
 
-    /** Register all Bukkit event listeners. */
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new PlayerJoinQuitListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this),            this);
         getServer().getPluginManager().registerEvents(new PlayerKillListener(this),      this);
         getServer().getPluginManager().registerEvents(new VoteListener(this),            this);
+        getServer().getPluginManager().registerEvents(voteGuiListener,                    this);
     }
 
-    // ----------------------------------------------------------------
-    // Accessors
-    // ----------------------------------------------------------------
-
-    public static KMCCore getInstance()             { return instance; }
-
+    public static KMCCore getInstance() { return instance; }
     public DatabaseManager    getDatabaseManager()   { return databaseManager; }
     public TeamManager        getTeamManager()       { return teamManager; }
     public PlayerDataManager  getPlayerDataManager() { return playerDataManager; }
@@ -186,8 +121,9 @@ public final class KMCCore extends JavaPlugin {
     public ScoreboardManager  getScoreboardManager() { return scoreboardManager; }
     public NPCManager         getNpcManager()        { return npcManager; }
     public AutomationManager  getAutomationManager() { return automationManager; }
-    public TabListManager     getTabListManager()     { return tabListManager; }
-    public ArenaManager       getArenaManager()       { return arenaManager; }
-    public SchematicManager   getSchematicManager()   { return schematicManager; }
+    public TabListManager     getTabListManager()    { return tabListManager; }
+    public ArenaManager       getArenaManager()      { return arenaManager; }
+    public SchematicManager   getSchematicManager()  { return schematicManager; }
+    public VoteGuiListener    getVoteGuiListener()   { return voteGuiListener; }
     public KMCApi             getApi()               { return api; }
 }

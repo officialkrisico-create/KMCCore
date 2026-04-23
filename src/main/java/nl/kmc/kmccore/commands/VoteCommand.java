@@ -6,19 +6,19 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 
 /**
- * /kmcvote <1|2|3>
+ * /kmcvote [open|<number>]
  *
- * <p>Registered as a real command so the clickable chat buttons can use
- * {@code ClickEvent.runCommand("/kmcvote 1")} instead of chat input.
- * Players can also type it manually.
+ * <ul>
+ *   <li>{@code /kmcvote}          — opens the GUI if a vote is active</li>
+ *   <li>{@code /kmcvote open}     — same (triggered by the clickable chat prompt)</li>
+ *   <li>{@code /kmcvote <number>} — casts a vote for option N directly</li>
+ * </ul>
  */
 public class VoteCommand implements CommandExecutor {
 
     private final KMCCore plugin;
 
-    public VoteCommand(KMCCore plugin) {
-        this.plugin = plugin;
-    }
+    public VoteCommand(KMCCore plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -32,11 +32,13 @@ public class VoteCommand implements CommandExecutor {
             return true;
         }
 
-        if (args.length == 0) {
-            player.sendMessage(MessageUtil.get("invalid-usage").replace("{usage}", "/kmcvote <1|2|3>"));
+        // No arg OR "open" → open the GUI
+        if (args.length == 0 || args[0].equalsIgnoreCase("open")) {
+            plugin.getVoteGuiListener().openVoteGui(player);
             return true;
         }
 
+        // Numeric → direct vote
         int option;
         try {
             option = Integer.parseInt(args[0]);
@@ -44,7 +46,6 @@ public class VoteCommand implements CommandExecutor {
             player.sendMessage(MessageUtil.get("invalid-number"));
             return true;
         }
-
         plugin.getGameManager().castVote(player, option);
         return true;
     }

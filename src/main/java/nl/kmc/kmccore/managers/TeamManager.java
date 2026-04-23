@@ -175,9 +175,11 @@ public class TeamManager {
         pd.setTeamId(teamId);
         plugin.getDatabaseManager().savePlayer(pd);
 
-        // Update nametag for online player
-        Player online = Bukkit.getPlayer(uuid);
-        if (online != null) applyNametagScoreboard(online);
+        // Update nametag for all online players (needed for prefixes to propagate)
+        if (plugin.getTabListManager() != null) {
+            plugin.getTabListManager().refreshAllNametags();
+            plugin.getTabListManager().refreshAll();
+        }
 
         return AddResult.OK;
     }
@@ -200,11 +202,10 @@ public class TeamManager {
             plugin.getDatabaseManager().savePlayer(pd);
         }
 
-        // Remove nametag team entry
-        Player online = Bukkit.getPlayer(uuid);
-        if (online != null) {
-            Team bt = nametag.getTeam("kmc_" + team.getId());
-            if (bt != null) bt.removeEntry(online.getName());
+        // Refresh nametags for all players
+        if (plugin.getTabListManager() != null) {
+            plugin.getTabListManager().refreshAllNametags();
+            plugin.getTabListManager().refreshAll();
         }
 
         return true;

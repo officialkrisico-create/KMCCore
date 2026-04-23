@@ -1,11 +1,12 @@
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\api\KMCApi.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\ArenaCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\AutomationCommand.java
-C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\CoinsCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\GameCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\LeaderboardCommand.java
+C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\LobbyCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\NPCCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\PointsCommand.java
+C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\RandomTeamsCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\RoundCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\StatsCommand.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\commands\TeamChatCommand.java
@@ -17,6 +18,7 @@ C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\KMCCore.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\ChatListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\PlayerJoinQuitListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\PlayerKillListener.java
+C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\VoteGuiListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\listeners\VoteListener.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\managers\ArenaManager.java
 C:\Users\krish\Downloads\KMCCore\src\main\java\nl\kmc\kmccore\managers\AutomationManager.java

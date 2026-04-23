@@ -155,7 +155,7 @@ public class ScoreboardManager {
 
 
         PlayerData pd = plugin.getPlayerDataManager().get(player.getUniqueId());
-        int coins = (pd != null) ? pd.getCoins() : 0;
+
         int ppoints = (pd != null) ? pd.getPoints() : 0;
         KMCTeam myTeam = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
 
@@ -222,7 +222,7 @@ public class ScoreboardManager {
         }
 
         line = setLine(obj, board, line, "&7Punten: &e" + ppoints);
-        line = setLine(obj, board, line, "&7Munten: &b" + coins);
+
         line = setLine(obj, board, line, "&r   ");
 
         player.setScoreboard(board);

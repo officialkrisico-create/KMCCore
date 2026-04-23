@@ -46,8 +46,7 @@ public class LeaderboardCommand implements CommandExecutor {
                 sender.sendMessage(MessageUtil.get("leaderboard.player-entry")
                         .replace("{rank}", String.valueOf(i + 1))
                         .replace("{player}", pd.getName())
-                        .replace("{points}", String.valueOf(pd.getPoints()))
-                        .replace("{coins}", String.valueOf(pd.getCoins())));
+                        .replace("{points}", String.valueOf(pd.getPoints())));
             }
         }
         return true;

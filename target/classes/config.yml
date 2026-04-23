@@ -186,23 +186,9 @@ games:
 # -----------------------------------------------------------------------
 # Points
 # -----------------------------------------------------------------------
-points:
-  # Default points awarded per game (position -> points)
-  # These are BASE points, multiplied by the round multiplier
-  placement:
-    1: 100   # 1st place
-    2: 75    # 2nd place
-    3: 50    # 3rd place
-    4: 25    # 4th place
+# All point rewards (kills, placement, bonuses) are configured in
+# plugins/KMCCore/points.yml — see that file for details.
 
-  # Per-game overrides (optional — comment out to use defaults above)
-  # game-overrides:
-  #   team_skywars:
-  #     1: 120
-  #     2: 90
-
-  # Kill reward (per kill, before multiplier)
-  kill-reward: 10
 
 # -----------------------------------------------------------------------
 # Scoreboard (sidebar)

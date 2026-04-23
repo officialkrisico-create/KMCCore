@@ -6,12 +6,12 @@ import nl.kmc.kmccore.models.PlayerData;
 import nl.kmc.kmccore.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,78 +19,60 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * Manages hologram/ArmorStand NPCs that display leaderboard info.
+ * Manages leaderboard display using hologram-stacked ArmorStands.
  *
- * <p>This implementation uses invisible ArmorStand entities with custom names
- * as holograms. If Citizens is detected a future expansion can swap in
- * proper NPC entities.
+ * <p>FancyNpcs support: if FancyNpcs is installed you can attach a
+ * leaderboard hologram to any existing FancyNpc. Interact with the NPC
+ * to open the leaderboard book (future feature). For now the NPC itself
+ * is created via FancyNpcs' own commands — KMCCore just overlays the
+ * hologram above the NPC's location.
  *
- * <p>Supported display types:
- * <ul>
- *   <li>{@code top_teams}     – top 5 teams by points</li>
- *   <li>{@code top_players}   – top 5 players by points</li>
- *   <li>{@code current_game}  – name of the active game</li>
- *   <li>{@code multiplier}    – current round multiplier</li>
- * </ul>
- *
- * <p>NPCs are persisted in {@code plugins/KMCCore/npcs.yml} and
- * restored on startup.
+ * <p>Supported types: TOP_TEAMS, TOP_PLAYERS, CURRENT_GAME, MULTIPLIER
  */
 public class NPCManager {
 
-    // ----------------------------------------------------------------
-    // Types
-    // ----------------------------------------------------------------
-
     public enum NpcType {
         TOP_TEAMS, TOP_PLAYERS, CURRENT_GAME, MULTIPLIER;
-
         public static NpcType fromString(String s) {
-            return switch (s.toLowerCase()) {
-                case "top_teams"   -> TOP_TEAMS;
-                case "top_players" -> TOP_PLAYERS;
-                case "current_game"-> CURRENT_GAME;
-                case "multiplier"  -> MULTIPLIER;
-                default            -> null;
-            };
+            try { return valueOf(s.toUpperCase()); }
+            catch (IllegalArgumentException e) { return null; }
         }
     }
 
-    /** A single leaderboard NPC entry. */
     public static class KmcNpc {
-        public final String      id;
-        public final NpcType     type;
-        public final Location    location;
-        public final List<UUID>  standUuids = new ArrayList<>();  // UUIDs of spawned ArmorStands
+        public final String     id;
+        public final NpcType    type;
+        public final Location   location;
+        /** FancyNpcs NPC ID this hologram is linked to (optional). */
+        public final String     fancyNpcId;
+        public final List<UUID> standUuids = new ArrayList<>();
 
-        KmcNpc(String id, NpcType type, Location location) {
-            this.id       = id;
-            this.type     = type;
+        KmcNpc(String id, NpcType type, Location location, String fancyNpcId) {
+            this.id = id;
+            this.type = type;
             this.location = location;
+            this.fancyNpcId = fancyNpcId;
         }
     }
-
-    // ----------------------------------------------------------------
-    // Fields
-    // ----------------------------------------------------------------
 
     private final KMCCore plugin;
     private final Map<String, KmcNpc> npcs = new LinkedHashMap<>();
     private int nextId = 1;
-
     private final File npcFile;
-    private FileConfiguration npcConfig;
-
-    // ----------------------------------------------------------------
-    // Init
-    // ----------------------------------------------------------------
+    private final boolean fancyNpcsPresent;
 
     public NPCManager(KMCCore plugin) {
-        this.plugin  = plugin;
+        this.plugin = plugin;
         this.npcFile = new File(plugin.getDataFolder(), "npcs.yml");
-        loadFromDisk();
 
-        // Schedule periodic refresh (every 5 seconds)
+        fancyNpcsPresent = Bukkit.getPluginManager().getPlugin("FancyNpcs") != null;
+        if (fancyNpcsPresent) {
+            plugin.getLogger().info("FancyNpcs detected — leaderboard NPCs can link to FancyNpcs.");
+        } else {
+            plugin.getLogger().info("FancyNpcs not present — using ArmorStand holograms only.");
+        }
+
+        loadFromDisk();
         Bukkit.getScheduler().runTaskTimer(plugin, this::refreshAll, 100L, 100L);
     }
 
@@ -99,27 +81,21 @@ public class NPCManager {
     // ----------------------------------------------------------------
 
     /**
-     * Creates a new NPC at the given location.
+     * Creates a new leaderboard hologram.
      *
-     * @param type     display type
-     * @param location spawn location
-     * @return the created NPC
+     * @param type       type of leaderboard
+     * @param location   where to spawn the hologram stack
+     * @param fancyNpcId optional FancyNpcs NPC ID to link with (may be null)
      */
-    public KmcNpc createNpc(NpcType type, Location location) {
+    public KmcNpc createNpc(NpcType type, Location location, String fancyNpcId) {
         String id = "npc_" + nextId++;
-        KmcNpc npc = new KmcNpc(id, type, location);
+        KmcNpc npc = new KmcNpc(id, type, location, fancyNpcId);
         npcs.put(id, npc);
         spawnStands(npc);
         save();
         return npc;
     }
 
-    /**
-     * Removes an NPC and despawns its ArmorStands.
-     *
-     * @param id NPC id
-     * @return {@code false} if not found
-     */
     public boolean removeNpc(String id) {
         KmcNpc npc = npcs.remove(id);
         if (npc == null) return false;
@@ -133,30 +109,28 @@ public class NPCManager {
     }
 
     // ----------------------------------------------------------------
-    // ArmorStand helpers
+    // ArmorStand rendering
     // ----------------------------------------------------------------
 
-    /** Spawns stacked ArmorStands at {@code npc.location} with placeholder names. */
     private void spawnStands(KmcNpc npc) {
-        int lines = getLinesForType(npc.type);
+        List<String> lines = buildLines(npc.type);
         Location base = npc.location.clone();
 
-        for (int i = 0; i < lines; i++) {
-            base.setY(npc.location.getY() + (lines - i - 1) * 0.25);
-            ArmorStand as = (ArmorStand) base.getWorld().spawnEntity(base, EntityType.ARMOR_STAND);
+        for (int i = 0; i < lines.size(); i++) {
+            Location lineLoc = base.clone();
+            lineLoc.setY(base.getY() + (lines.size() - i - 1) * 0.28);
+            ArmorStand as = (ArmorStand) lineLoc.getWorld().spawnEntity(lineLoc, EntityType.ARMOR_STAND);
             as.setVisible(false);
             as.setCustomNameVisible(true);
             as.setGravity(false);
             as.setSmall(true);
+            as.setMarker(true);
             as.setInvulnerable(true);
-            as.setCustomName("...");
+            as.setCustomName(MessageUtil.color(lines.get(i)));
             npc.standUuids.add(as.getUniqueId());
         }
-
-        updateStandNames(npc);
     }
 
-    /** Removes all ArmorStands belonging to an NPC. */
     private void despawnStands(KmcNpc npc) {
         for (UUID uuid : npc.standUuids) {
             Entity e = Bukkit.getEntity(uuid);
@@ -165,10 +139,15 @@ public class NPCManager {
         npc.standUuids.clear();
     }
 
-    /** Updates name tags on all stands for an NPC. */
     private void updateStandNames(KmcNpc npc) {
         List<String> lines = buildLines(npc.type);
-        for (int i = 0; i < npc.standUuids.size() && i < lines.size(); i++) {
+        // Recreate if line count changed
+        if (lines.size() != npc.standUuids.size()) {
+            despawnStands(npc);
+            spawnStands(npc);
+            return;
+        }
+        for (int i = 0; i < npc.standUuids.size(); i++) {
             Entity e = Bukkit.getEntity(npc.standUuids.get(i));
             if (e instanceof ArmorStand as) {
                 as.setCustomName(MessageUtil.color(lines.get(i)));
@@ -182,23 +161,22 @@ public class NPCManager {
 
     private List<String> buildLines(NpcType type) {
         return switch (type) {
-            case TOP_TEAMS   -> buildTopTeams();
-            case TOP_PLAYERS -> buildTopPlayers();
-            case CURRENT_GAME-> buildCurrentGame();
-            case MULTIPLIER  -> buildMultiplier();
+            case TOP_TEAMS    -> buildTopTeams();
+            case TOP_PLAYERS  -> buildTopPlayers();
+            case CURRENT_GAME -> buildCurrentGame();
+            case MULTIPLIER   -> buildMultiplier();
         };
     }
 
     private List<String> buildTopTeams() {
         List<String> lines = new ArrayList<>();
-        lines.add("&6&lTop Teams");
+        lines.add("&6&l⚔ Top Teams ⚔");
         List<KMCTeam> teams = plugin.getTeamManager().getTeamsSortedByPoints();
         int rank = 1;
         for (KMCTeam t : teams) {
             if (rank > 5) break;
-            String medal = rank == 1 ? "&6" : rank == 2 ? "&7" : "&c";
-            lines.add(medal + "#" + rank + " " + t.getColor() + t.getDisplayName()
-                      + " &8- &e" + t.getPoints());
+            String medal = rank == 1 ? "&6🥇" : rank == 2 ? "&7🥈" : rank == 3 ? "&c🥉" : "&7#" + rank;
+            lines.add(medal + " " + t.getColor() + t.getDisplayName() + " &8- &e" + t.getPoints());
             rank++;
         }
         return lines;
@@ -206,13 +184,13 @@ public class NPCManager {
 
     private List<String> buildTopPlayers() {
         List<String> lines = new ArrayList<>();
-        lines.add("&e&lTop Spelers");
+        lines.add("&e&l★ Top Spelers ★");
         List<PlayerData> players = plugin.getPlayerDataManager().getLeaderboard();
         int rank = 1;
         for (PlayerData pd : players) {
             if (rank > 5) break;
-            String medal = rank == 1 ? "&6" : rank == 2 ? "&7" : "&c";
-            lines.add(medal + "#" + rank + " &f" + pd.getName() + " &8- &e" + pd.getPoints());
+            String medal = rank == 1 ? "&6🥇" : rank == 2 ? "&7🥈" : rank == 3 ? "&c🥉" : "&7#" + rank;
+            lines.add(medal + " &f" + pd.getName() + " &8- &e" + pd.getPoints());
             rank++;
         }
         return lines;
@@ -220,90 +198,68 @@ public class NPCManager {
 
     private List<String> buildCurrentGame() {
         List<String> lines = new ArrayList<>();
-        lines.add("&b&lHuidige Game");
+        lines.add("&b&l▶ Huidige Game");
         String gameName = plugin.getGameManager().getActiveGame() != null
-                          ? plugin.getGameManager().getActiveGame().getDisplayName()
-                          : "&8Geen";
+                ? plugin.getGameManager().getActiveGame().getDisplayName()
+                : "&8Geen";
         lines.add("&f" + gameName);
         return lines;
     }
 
     private List<String> buildMultiplier() {
         List<String> lines = new ArrayList<>();
-        lines.add("&d&lMultiplier");
-        lines.add("&ex" + plugin.getTournamentManager().getMultiplier());
+        lines.add("&d&l★ Multiplier");
+        lines.add("&e×" + plugin.getTournamentManager().getMultiplier());
         lines.add("&7Ronde " + plugin.getTournamentManager().getCurrentRound());
         return lines;
     }
 
-    private int getLinesForType(NpcType type) {
-        return switch (type) {
-            case TOP_TEAMS, TOP_PLAYERS -> 6;
-            case CURRENT_GAME           -> 2;
-            case MULTIPLIER             -> 3;
-        };
-    }
-
-    // ----------------------------------------------------------------
-    // Refresh
     // ----------------------------------------------------------------
 
-    /** Refreshes name tags on all NPC stands. */
     public void refreshAll() {
-        for (KmcNpc npc : npcs.values()) {
-            updateStandNames(npc);
-        }
+        for (KmcNpc npc : npcs.values()) updateStandNames(npc);
     }
 
+    public boolean isFancyNpcsPresent() { return fancyNpcsPresent; }
+
     // ----------------------------------------------------------------
-    // Persistence (npcs.yml)
+    // Persistence
     // ----------------------------------------------------------------
 
     private void loadFromDisk() {
         if (!npcFile.exists()) return;
-        npcConfig = YamlConfiguration.loadConfiguration(npcFile);
-
-        ConfigurationSection sec = npcConfig.getConfigurationSection("npcs");
+        FileConfiguration cfg = YamlConfiguration.loadConfiguration(npcFile);
+        ConfigurationSection sec = cfg.getConfigurationSection("npcs");
         if (sec == null) return;
 
         for (String id : sec.getKeys(false)) {
             ConfigurationSection nc = sec.getConfigurationSection(id);
             if (nc == null) continue;
-
-            String typeStr = nc.getString("type", "top_teams");
-            NpcType type   = NpcType.fromString(typeStr);
+            NpcType type = NpcType.fromString(nc.getString("type", "TOP_TEAMS"));
             if (type == null) continue;
-
             Location loc = (Location) nc.get("location");
             if (loc == null) continue;
-
-            KmcNpc npc = new KmcNpc(id, type, loc);
+            String fancyId = nc.getString("fancy-npc-id");
+            KmcNpc npc = new KmcNpc(id, type, loc, fancyId);
             npcs.put(id, npc);
             spawnStands(npc);
-
-            // Figure out next available ID
             try {
                 int num = Integer.parseInt(id.replace("npc_", ""));
                 if (num >= nextId) nextId = num + 1;
             } catch (NumberFormatException ignored) {}
         }
-
-        plugin.getLogger().info("Loaded " + npcs.size() + " NPCs.");
+        plugin.getLogger().info("Loaded " + npcs.size() + " leaderboard NPCs.");
     }
 
     public void save() {
-        npcConfig = new YamlConfiguration();
-
-        for (KmcNpc npc : npcs.values()) {
-            String path = "npcs." + npc.id;
-            npcConfig.set(path + ".type",     npc.type.name().toLowerCase());
-            npcConfig.set(path + ".location", npc.location);
+        FileConfiguration cfg = new YamlConfiguration();
+        for (KmcNpc n : npcs.values()) {
+            String path = "npcs." + n.id + ".";
+            cfg.set(path + "type",          n.type.name());
+            cfg.set(path + "location",      n.location);
+            if (n.fancyNpcId != null) cfg.set(path + "fancy-npc-id", n.fancyNpcId);
         }
-
-        try {
-            npcConfig.save(npcFile);
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save npcs.yml", e);
-        }
+        try { cfg.save(npcFile); }
+        catch (IOException e) { plugin.getLogger().log(Level.WARNING, "Save NPCs failed", e); }
     }
 }

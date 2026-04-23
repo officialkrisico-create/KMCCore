@@ -3,12 +3,12 @@ nl\kmc\kmccore\util\ClickableVoteMessage.class
 nl\kmc\kmccore\models\KMCTeam.class
 nl\kmc\kmccore\npc\NPCManager.class
 nl\kmc\kmccore\managers\GameManager.class
-nl\kmc\kmccore\commands\CoinsCommand.class
 nl\kmc\kmccore\commands\PointsCommand.class
 nl\kmc\kmccore\npc\NPCManager$KmcNpc.class
 nl\kmc\kmccore\commands\TournamentCommand.class
 nl\kmc\kmccore\util\MessageUtil.class
 nl\kmc\kmccore\scoreboard\ScoreboardManager.class
+nl\kmc\kmccore\commands\LobbyCommand.class
 nl\kmc\kmccore\managers\AutomationManager.class
 nl\kmc\kmccore\commands\NPCCommand.class
 nl\kmc\kmccore\models\PlayerData.class
@@ -31,6 +31,7 @@ nl\kmc\kmccore\commands\TeamCommand.class
 nl\kmc\kmccore\npc\NPCManager$NpcType.class
 nl\kmc\kmccore\listeners\ChatListener.class
 nl\kmc\kmccore\commands\StatsCommand.class
+nl\kmc\kmccore\commands\RandomTeamsCommand.class
 nl\kmc\kmccore\listeners\VoteListener.class
 nl\kmc\kmccore\KMCCore.class
 nl\kmc\kmccore\commands\RoundCommand.class
@@ -38,5 +39,6 @@ nl\kmc\kmccore\models\KMCGame.class
 nl\kmc\kmccore\commands\GameCommand.class
 nl\kmc\kmccore\commands\ArenaCommand.class
 nl\kmc\kmccore\database\DatabaseManager.class
+nl\kmc\kmccore\listeners\VoteGuiListener.class
 nl\kmc\kmccore\managers\PointsManager.class
 nl\kmc\kmccore\commands\AutomationCommand.class

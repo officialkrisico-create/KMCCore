@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** /kmcgame <start|stop|skip|next|vote|list|set> [game] */
+/** /kmcgame <start|stop|skip|forceskip|next|vote|list|set> [game] */
 public class GameCommand implements CommandExecutor, TabCompleter {
 
     private final KMCCore plugin;
@@ -38,6 +38,13 @@ public class GameCommand implements CommandExecutor, TabCompleter {
                 else
                     sender.sendMessage(MessageUtil.get("game.skipped").replace("{game}", "huidige game"));
             }
+            case "forceskip" -> {
+                if (!plugin.getGameManager().forceSkipCurrentGame())
+                    sender.sendMessage(MessageUtil.get("game.no-active"));
+                else
+                    sender.sendMessage(org.bukkit.ChatColor.YELLOW
+                            + "[KMC] Game geforceerd overgeslagen. Volgende stemronde start direct.");
+            }
             case "next" -> {
                 KMCGame next = plugin.getGameManager().randomNextGame();
                 if (next == null) sender.sendMessage("Geen games beschikbaar.");
@@ -63,11 +70,11 @@ public class GameCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender s, Command c, String l, String[] args) {
-        if (args.length == 1) return List.of("start","stop","skip","next","vote","list","set").stream().filter(o -> o.startsWith(args[0])).collect(Collectors.toList());
+        if (args.length == 1) return List.of("start","stop","skip","forceskip","next","vote","list","set").stream().filter(o -> o.startsWith(args[0])).collect(Collectors.toList());
         if (args.length == 2 && (args[0].equalsIgnoreCase("start") || args[0].equalsIgnoreCase("set")))
             return plugin.getGameManager().getAllGames().stream().map(KMCGame::getId).filter(id -> id.startsWith(args[1].toLowerCase())).collect(Collectors.toList());
         return List.of();
     }
 
-    private void usage(CommandSender s) { s.sendMessage(MessageUtil.get("invalid-usage").replace("{usage}", "/kmcgame <start|stop|skip|next|vote|list|set> [game]")); }
+    private void usage(CommandSender s) { s.sendMessage(MessageUtil.get("invalid-usage").replace("{usage}", "/kmcgame <start|stop|skip|forceskip|next|vote|list|set> [game]")); }
 }

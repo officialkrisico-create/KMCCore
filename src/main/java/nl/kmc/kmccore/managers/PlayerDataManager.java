@@ -97,15 +97,35 @@ public class PlayerDataManager {
         }
     }
 
-    /** Clears all player stats (used on tournament reset). */
-    public void resetAll() {
+    /**
+     * Soft reset — clears tournament stats (points/kills/wins/streak) but
+     * keeps lifetime data (bestWinStreak, winsPerGame, playtime).
+     * Used at natural tournament end so a new event starts fresh.
+     */
+    public void resetSeasonStats() {
         for (PlayerData pd : cache.values()) {
-            pd.setCoins(0);
             pd.setPoints(0);
             pd.setKills(0);
             pd.setWins(0);
+            pd.setWinStreak(0);
+            pd.setGamesPlayed(0);
         }
         saveAll();
-        plugin.getDatabaseManager().resetAll();
+    }
+
+    /** Hard reset — wipes everything including lifetime stats. */
+    public void resetAll() {
+        for (PlayerData pd : cache.values()) {
+            pd.setPoints(0);
+            pd.setKills(0);
+            pd.setWins(0);
+            pd.setWinStreak(0);
+            pd.setBestWinStreak(0);
+            pd.setGamesPlayed(0);
+            pd.setTotalPlayTimeMinutes(0);
+            pd.setWinsPerGame(new java.util.HashMap<>());
+        }
+        saveAll();
+        plugin.getDatabaseManager().resetAll(true);
     }
 }

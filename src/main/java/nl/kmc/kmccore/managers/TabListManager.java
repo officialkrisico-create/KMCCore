@@ -2,7 +2,6 @@ package nl.kmc.kmccore.managers;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import nl.kmc.kmccore.KMCCore;
 import nl.kmc.kmccore.models.KMCTeam;
@@ -16,25 +15,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Manages coloured player names in:
- * <ul>
- *   <li>The TAB player list (prefix = team colour)</li>
- *   <li>Chat messages (prefix = [TeamName] in team colour)</li>
- *   <li>Above-head nametags (via Scoreboard Team prefix)</li>
- * </ul>
+ * Handles team-coloured player names in:
+ *   - Chat messages (prefix = [TeamName])
+ *   - TAB player list (player name in team colour)
+ *   - Above-head nametags (via a SHARED scoreboard)
  *
- * <p>Uses the Paper Adventure API for tab/chat and the legacy
- * Scoreboard Team API for above-head nametag colouring (still the
- * most reliable method in 1.21 without ProtocolLib).
+ * <p>IMPORTANT FIX FROM PREVIOUS VERSION:
+ * All players must be on the SAME Bukkit scoreboard for team-prefixes
+ * to show to everyone else. Previously the sidebar ScoreboardManager
+ * was overwriting each player's scoreboard with a personal one,
+ * which broke the team nametag team registration.
+ *
+ * <p>Now everything uses the shared {@code mainScoreboard} and the
+ * sidebar is registered as an objective on THIS scoreboard instead.
  */
 public class TabListManager {
 
     private final KMCCore plugin;
 
-    /**
-     * Maps ChatColor → NamedTextColor for Adventure conversion.
-     * Only the colours actually used by KMC teams are listed.
-     */
+    /** Shared scoreboard used by ALL online players for team-nametags. */
+    private final Scoreboard mainScoreboard;
+
+    /** Map Bukkit ChatColor → Adventure NamedTextColor. */
     private static final Map<ChatColor, NamedTextColor> COLOR_MAP = new HashMap<>();
     static {
         COLOR_MAP.put(ChatColor.RED,          NamedTextColor.RED);
@@ -48,22 +50,78 @@ public class TabListManager {
         COLOR_MAP.put(ChatColor.DARK_GREEN,   NamedTextColor.DARK_GREEN);
         COLOR_MAP.put(ChatColor.AQUA,         NamedTextColor.AQUA);
         COLOR_MAP.put(ChatColor.DARK_AQUA,    NamedTextColor.DARK_AQUA);
+        COLOR_MAP.put(ChatColor.DARK_RED,     NamedTextColor.DARK_RED);
+        COLOR_MAP.put(ChatColor.DARK_BLUE,    NamedTextColor.DARK_BLUE);
+        COLOR_MAP.put(ChatColor.GRAY,         NamedTextColor.GRAY);
+        COLOR_MAP.put(ChatColor.DARK_GRAY,    NamedTextColor.DARK_GRAY);
     }
-
-    // ----------------------------------------------------------------
 
     public TabListManager(KMCCore plugin) {
         this.plugin = plugin;
+        this.mainScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
+        // Create team entries for each KMC team
+        setupTeams();
     }
 
     // ----------------------------------------------------------------
-    // Tab list header / footer
+
+    /** Creates a Bukkit Team per KMC team on the main scoreboard. */
+    private void setupTeams() {
+        for (KMCTeam t : plugin.getTeamManager().getAllTeams()) {
+            String teamName = "kmc_" + t.getId();
+            Team bt = mainScoreboard.getTeam(teamName);
+            if (bt == null) bt = mainScoreboard.registerNewTeam(teamName);
+
+            NamedTextColor ntc = COLOR_MAP.getOrDefault(t.getColor(), NamedTextColor.WHITE);
+            bt.prefix(Component.text("[" + t.getDisplayName() + "] ", ntc, TextDecoration.BOLD));
+            bt.color(ntc);
+            bt.setAllowFriendlyFire(false);
+            bt.setCanSeeFriendlyInvisibles(true);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Public API
     // ----------------------------------------------------------------
 
     /**
-     * Updates the TAB header and footer for a single player.
-     * Called on join and whenever round/team state changes.
+     * Adds a player to their team's entry on the shared scoreboard.
+     * This is what actually shows the coloured [TeamName] prefix to others.
      */
+    public void applyTeamNametag(Player player) {
+        // Ensure teams are registered (new teams added at runtime?)
+        setupTeams();
+
+        // Remove player from all KMC teams first
+        for (Team t : mainScoreboard.getTeams()) {
+            if (t.getName().startsWith("kmc_") && t.hasEntry(player.getName())) {
+                t.removeEntry(player.getName());
+            }
+        }
+
+        KMCTeam kmcTeam = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
+        if (kmcTeam != null) {
+            Team bt = mainScoreboard.getTeam("kmc_" + kmcTeam.getId());
+            if (bt != null) bt.addEntry(player.getName());
+        }
+
+        // All players use the main scoreboard — do NOT switch them to a personal one.
+        // The sidebar will register its objective on this same main scoreboard.
+        player.setScoreboard(mainScoreboard);
+    }
+
+    /**
+     * Refreshes nametags for every online player.
+     * Call after team assignments change.
+     */
+    public void refreshAllNametags() {
+        for (Player p : Bukkit.getOnlinePlayers()) applyTeamNametag(p);
+    }
+
+    // ----------------------------------------------------------------
+    // Tab list header/footer
+    // ----------------------------------------------------------------
+
     public void updateTabList(Player player) {
         KMCTeam team = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
 
@@ -72,66 +130,23 @@ public class TabListManager {
                 .replace("{multiplier}", String.valueOf(plugin.getTournamentManager().getMultiplier()));
 
         String rawFooter = plugin.getConfig().getString("tablist.footer", "\n&7Team: {team_color}{team_name}\n")
-                .replace("{team_color}", team != null ? team.getColor().toString() : "")
+                .replace("{team_color}", team != null ? team.getColor().toString() : "&8")
                 .replace("{team_name}",  team != null ? team.getDisplayName() : "Geen");
 
-        player.sendPlayerListHeaderAndFooter(
-                fromLegacy(rawHeader),
-                fromLegacy(rawFooter));
+        player.sendPlayerListHeaderAndFooter(fromLegacy(rawHeader), fromLegacy(rawFooter));
     }
 
-    /** Refreshes tab list header/footer for every online player. */
     public void refreshAll() {
-        for (Player p : Bukkit.getOnlinePlayers()) updateTabList(p);
-    }
-
-    // ----------------------------------------------------------------
-    // Nametag scoreboard (above head + tab name colour)
-    // ----------------------------------------------------------------
-
-    /**
-     * Applies the team's colour to a player's nametag (above their head
-     * and in the TAB list) using a Bukkit Scoreboard Team.
-     *
-     * <p>Call this whenever a player joins or changes team.
-     */
-    public void applyTeamNametag(Player player) {
-        Scoreboard board = plugin.getTeamManager().getNametagScoreboard();
-        KMCTeam team     = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
-
-        // Remove from all KMC scoreboard teams first
-        for (Team bt : board.getTeams()) {
-            if (bt.getName().startsWith("kmc_")) bt.removeEntry(player.getName());
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            applyTeamNametag(p);
+            updateTabList(p);
         }
-
-        if (team == null) return;
-
-        Team bt = board.getTeam("kmc_" + team.getId());
-        if (bt == null) return;
-
-        // Set the Adventure prefix using the correct team colour
-        NamedTextColor ntc = COLOR_MAP.getOrDefault(team.getColor(), NamedTextColor.WHITE);
-        bt.prefix(Component.text("[" + team.getDisplayName() + "] ", ntc, TextDecoration.BOLD));
-        bt.color(ntc);
-        bt.addEntry(player.getName());
-
-        player.setScoreboard(board);
     }
 
     // ----------------------------------------------------------------
-    // Chat formatting
+    // Chat message formatting
     // ----------------------------------------------------------------
 
-    /**
-     * Builds a chat Component for a player message with their team prefix.
-     *
-     * <p>Format:  {@code [TeamName] PlayerName: message}
-     * If the player has no team, no prefix is prepended.
-     *
-     * @param player  the sending player
-     * @param message the raw message string
-     * @return a Component ready to broadcast
-     */
     public Component buildChatMessage(Player player, String message) {
         KMCTeam team = plugin.getTeamManager().getTeamByPlayer(player.getUniqueId());
         NamedTextColor nameColor = NamedTextColor.WHITE;
@@ -142,34 +157,19 @@ public class TabListManager {
         if (team != null) {
             NamedTextColor tc = COLOR_MAP.getOrDefault(team.getColor(), NamedTextColor.WHITE);
             nameColor = tc;
-
-            // [TeamName] prefix
             builder.append(Component.text("[", NamedTextColor.GRAY))
                    .append(Component.text(team.getDisplayName(), tc, TextDecoration.BOLD))
                    .append(Component.text("] ", NamedTextColor.GRAY));
         }
 
-        // PlayerName in team colour (or white if no team)
-        builder.append(Component.text(player.getName(), nameColor, TextDecoration.BOLD));
-
-        // Separator
-        builder.append(Component.text(": ", NamedTextColor.GRAY));
-
-        // Message
-        builder.append(Component.text(message, NamedTextColor.WHITE));
-
+        builder.append(Component.text(player.getName(), nameColor, TextDecoration.BOLD))
+               .append(Component.text(": ", NamedTextColor.GRAY))
+               .append(Component.text(message, NamedTextColor.WHITE));
         return builder.build();
     }
 
-
-
-    /**
-     * Builds a team-chat Component (only visible to teammates).
-     * Prefixed with a "TC" indicator so it's visually distinct.
-     */
     public Component buildTeamChatMessage(Player player, KMCTeam team, String message) {
         NamedTextColor tc = COLOR_MAP.getOrDefault(team.getColor(), NamedTextColor.WHITE);
-
         return Component.text()
                 .append(Component.text("[TC] ", NamedTextColor.GRAY))
                 .append(Component.text("[" + team.getDisplayName() + "] ", tc, TextDecoration.BOLD))
@@ -180,20 +180,17 @@ public class TabListManager {
     }
 
     // ----------------------------------------------------------------
-    // Helper
+    // Helpers
     // ----------------------------------------------------------------
 
-    /** Converts a legacy {@code &}-formatted string to an Adventure Component. */
+    public Scoreboard getMainScoreboard() { return mainScoreboard; }
+
     public static Component fromLegacy(String text) {
-        // Paper's legacy serializer handles & codes
         return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
                 .legacyAmpersand().deserialize(text);
     }
 
-    /** Converts a ChatColor to its nearest NamedTextColor. */
     public static NamedTextColor toNamed(ChatColor cc) {
         return COLOR_MAP.getOrDefault(cc, NamedTextColor.WHITE);
     }
-
-
 }

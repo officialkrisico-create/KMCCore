@@ -7,9 +7,11 @@ import java.util.UUID;
 /**
  * Stores all persistent statistics for a single player.
  *
- * Basic stats:      coins, points, kills, wins
- * Extended stats:   totalCoinsEarned, gamesPlayed, totalPlayTimeMinutes,
+ * Basic stats:      points, kills, wins
+ * Extended stats:   gamesPlayed, totalPlayTimeMinutes,
  *                   winStreak, bestWinStreak, winsPerGame
+ *
+ * Coins have been REMOVED from the system — only points exist.
  */
 public class PlayerData {
 
@@ -18,13 +20,11 @@ public class PlayerData {
     private String     teamId;
 
     // ---- Basic stats -----------------------------------------------
-    private int  coins;
     private int  points;
     private int  kills;
     private int  wins;
 
     // ---- Extended / lifetime stats ---------------------------------
-    private int  totalCoinsEarned;
     private int  gamesPlayed;
     private int  totalPlayTimeMinutes;
     private int  winStreak;
@@ -38,17 +38,10 @@ public class PlayerData {
 
     private boolean teamChatEnabled;
 
-    // ----------------------------------------------------------------
     public PlayerData(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
     }
-
-    // ---- Coins -----------------------------------------------------
-    public int  getCoins()         { return coins; }
-    public void setCoins(int v)    { this.coins = Math.max(0, v); }
-    public void addCoins(int v)    { if (v > 0) totalCoinsEarned += v; this.coins = Math.max(0, this.coins + v); }
-    public void removeCoins(int v) { this.coins = Math.max(0, this.coins - v); }
 
     // ---- Points ----------------------------------------------------
     public int  getPoints()         { return points; }
@@ -65,7 +58,7 @@ public class PlayerData {
     public int  getWins()       { return wins; }
     public void setWins(int v)  { this.wins = Math.max(0, v); }
 
-    /** Records a win, updates streak, and increments the per-game counter. */
+    /** Records a win, updates streak, increments per-game counter. */
     public void addWin(String gameId) {
         this.wins++;
         this.winStreak++;
@@ -89,9 +82,7 @@ public class PlayerData {
     public void setTotalPlayTimeMinutes(int v) { this.totalPlayTimeMinutes = Math.max(0, v); }
     public void addPlayTimeMinutes(int v)      { this.totalPlayTimeMinutes += Math.max(0, v); }
 
-    /** Call when player enters a game. */
     public void startGameSession() { this.gameSessionStart = System.currentTimeMillis(); }
-    /** Call when player exits a game — auto-adds elapsed minutes. */
     public void endGameSession() {
         if (gameSessionStart < 0) return;
         addPlayTimeMinutes((int)((System.currentTimeMillis() - gameSessionStart) / 60_000));
@@ -99,22 +90,18 @@ public class PlayerData {
     }
 
     // ---- Per-game wins ---------------------------------------------
-    public Map<String, Integer> getWinsPerGame()                    { return winsPerGame; }
-    public void setWinsPerGame(Map<String, Integer> m)              { this.winsPerGame = m != null ? m : new HashMap<>(); }
+    public Map<String, Integer> getWinsPerGame()        { return winsPerGame; }
+    public void setWinsPerGame(Map<String, Integer> m)  { this.winsPerGame = m != null ? m : new HashMap<>(); }
     public String getFavouriteGame() {
         return winsPerGame.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey).orElse(null);
     }
 
-    // ---- Total coins earned ----------------------------------------
-    public int  getTotalCoinsEarned()      { return totalCoinsEarned; }
-    public void setTotalCoinsEarned(int v) { this.totalCoinsEarned = Math.max(0, v); }
-
     // ---- Team / chat -----------------------------------------------
-    public String  getTeamId()              { return teamId; }
-    public void    setTeamId(String id)     { this.teamId = id; }
-    public boolean hasTeam()                { return teamId != null && !teamId.isEmpty(); }
+    public String  getTeamId()                   { return teamId; }
+    public void    setTeamId(String id)          { this.teamId = id; }
+    public boolean hasTeam()                     { return teamId != null && !teamId.isEmpty(); }
     public boolean isTeamChatEnabled()           { return teamChatEnabled; }
     public void    setTeamChatEnabled(boolean v) { this.teamChatEnabled = v; }
     public void    toggleTeamChat()              { this.teamChatEnabled = !this.teamChatEnabled; }
@@ -126,6 +113,6 @@ public class PlayerData {
 
     @Override
     public String toString() {
-        return "PlayerData{name=" + name + ", points=" + points + ", wins=" + wins + ", streak=" + winStreak + "}";
+        return "PlayerData{name=" + name + ", points=" + points + ", wins=" + wins + "}";
     }
 }

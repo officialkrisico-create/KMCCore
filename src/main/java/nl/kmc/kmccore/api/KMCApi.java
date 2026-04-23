@@ -11,161 +11,78 @@ import java.util.function.Consumer;
 /**
  * Public API surface for KMC Core.
  *
- * <p>Other plugins (or future Twitch/chat-bot integrations) can depend on
- * KMC Core and use this class to:
- * <ul>
- *   <li>Query team / player data</li>
- *   <li>Award coins or points programmatically</li>
- *   <li>Register callbacks for game-end / round-start events</li>
- * </ul>
- *
- * <p>Usage from another plugin:
- * <pre>{@code
- *   KMCCore core = (KMCCore) Bukkit.getPluginManager().getPlugin("KMCCore");
- *   KMCApi api = core.getApi();
- *   api.onGameEnd((gameName, winner) -> {
- *       // do something in your Twitch bot / chat overlay
- *   });
- * }</pre>
+ * <p>All point-giving methods route through {@link nl.kmc.kmccore.managers.PointsManager}
+ * so the "personal points also count for the team" rule is applied automatically.
  */
 public class KMCApi {
 
     private final KMCCore plugin;
 
-    // ---- Hook lists ------------------------------------------------
-    private final List<BiConsumer<String, String>> gameEndHooks    = new ArrayList<>();
-    private final List<Consumer<Integer>>          roundStartHooks = new ArrayList<>();
+    private final List<BiConsumer<String, String>> gameEndHooks        = new ArrayList<>();
+    private final List<Consumer<Integer>>          roundStartHooks     = new ArrayList<>();
     private final List<Runnable>                   tournamentStartHooks = new ArrayList<>();
 
-    // ----------------------------------------------------------------
+    public KMCApi(KMCCore plugin) { this.plugin = plugin; }
 
-    public KMCApi(KMCCore plugin) {
-        this.plugin = plugin;
-    }
+    // ---- Queries ---------------------------------------------------
 
-    // ----------------------------------------------------------------
-    // Data queries
-    // ----------------------------------------------------------------
-
-    /** Returns the team a player belongs to, or {@code null}. */
-    public KMCTeam getTeamByPlayer(UUID uuid) {
-        return plugin.getTeamManager().getTeamByPlayer(uuid);
-    }
-
-    /** Returns a team by its ID (e.g. {@code "rode_ratten"}). */
-    public KMCTeam getTeam(String teamId) {
-        return plugin.getTeamManager().getTeam(teamId);
-    }
-
-    /** Returns all teams sorted by points. */
-    public List<KMCTeam> getTeamLeaderboard() {
-        return plugin.getTeamManager().getTeamsSortedByPoints();
-    }
-
-    /** Returns player data, or {@code null} if never seen. */
-    public PlayerData getPlayerData(UUID uuid) {
-        return plugin.getPlayerDataManager().get(uuid);
-    }
-
-    /** Returns the full player leaderboard sorted by points. */
-    public List<PlayerData> getPlayerLeaderboard() {
-        return plugin.getPlayerDataManager().getLeaderboard();
-    }
-
-    /** @return name of the currently active game, or {@code null}. */
+    public KMCTeam getTeamByPlayer(UUID uuid) { return plugin.getTeamManager().getTeamByPlayer(uuid); }
+    public KMCTeam getTeam(String teamId)     { return plugin.getTeamManager().getTeam(teamId); }
+    public List<KMCTeam> getTeamLeaderboard() { return plugin.getTeamManager().getTeamsSortedByPoints(); }
+    public PlayerData getPlayerData(UUID uuid)                   { return plugin.getPlayerDataManager().get(uuid); }
+    public List<PlayerData> getPlayerLeaderboard()               { return plugin.getPlayerDataManager().getLeaderboard(); }
     public String getActiveGameName() {
         return plugin.getGameManager().getActiveGame() != null
-               ? plugin.getGameManager().getActiveGame().getDisplayName()
-               : null;
+               ? plugin.getGameManager().getActiveGame().getDisplayName() : null;
+    }
+    public double  getCurrentMultiplier() { return plugin.getTournamentManager().getMultiplier(); }
+    public int     getCurrentRound()      { return plugin.getTournamentManager().getCurrentRound(); }
+    public boolean isTournamentActive()   { return plugin.getTournamentManager().isActive(); }
+
+    // ---- Mutations (all route through PointsManager) --------------
+
+    /**
+     * Awards points to a player. The same amount is automatically
+     * added to the player's team if they have one.
+     *
+     * @return actual points awarded
+     */
+    public int givePoints(UUID uuid, int amount) {
+        return plugin.getPointsManager().awardPlayerPoints(uuid, amount);
     }
 
-    /** @return current round multiplier. */
-    public double getCurrentMultiplier() {
-        return plugin.getTournamentManager().getMultiplier();
-    }
-
-    /** @return current round number. */
-    public int getCurrentRound() {
-        return plugin.getTournamentManager().getCurrentRound();
-    }
-
-    /** @return whether the tournament is active. */
-    public boolean isTournamentActive() {
-        return plugin.getTournamentManager().isActive();
-    }
-
-    // ----------------------------------------------------------------
-    // Mutations
-    // ----------------------------------------------------------------
-
-    /** Awards coins to a player. */
-    public void giveCoins(UUID uuid, int amount) {
-        PlayerData pd = plugin.getPlayerDataManager().get(uuid);
-        if (pd != null) {
-            pd.addCoins(amount);
-            plugin.getDatabaseManager().savePlayer(pd);
-        }
-    }
-
-    /** Awards points to a player (not multiplied). */
-    public void givePoints(UUID uuid, int amount) {
-        plugin.getPointsManager().addPlayerPoints(uuid, amount);
-    }
-
-    /** Awards points to a team (not multiplied). */
-    public void giveTeamPoints(String teamId, int amount) {
+    /**
+     * Awards team-only points (does NOT add to any individual player).
+     * Use for team-based game placement bonuses.
+     */
+    public int giveTeamPoints(String teamId, int amount) {
         plugin.getPointsManager().addTeamPoints(teamId, amount);
+        return amount;
     }
 
-    // ----------------------------------------------------------------
-    // Event hooks
-    // ----------------------------------------------------------------
-
-    /**
-     * Registers a callback invoked when a game ends.
-     *
-     * @param hook {@code BiConsumer<gameName, winnerName>}
-     */
-    public void onGameEnd(BiConsumer<String, String> hook) {
-        gameEndHooks.add(hook);
+    /** Placement helper — position 1 = 1st place. Auto-credits team. */
+    public int awardPlayerPlacement(UUID uuid, int position) {
+        return plugin.getPointsManager().awardPlayerPlacement(uuid, position);
     }
 
-    /**
-     * Registers a callback invoked when a new round starts.
-     *
-     * @param hook {@code Consumer<roundNumber>}
-     */
-    public void onRoundStart(Consumer<Integer> hook) {
-        roundStartHooks.add(hook);
+    /** Team-placement helper for team-based games. Independent of player scores. */
+    public int awardTeamPlacement(String teamId, int position) {
+        return plugin.getPointsManager().awardTeamPlacement(teamId, position);
     }
 
-    /** Registers a callback invoked when the tournament starts. */
-    public void onTournamentStart(Runnable hook) {
-        tournamentStartHooks.add(hook);
-    }
+    // ---- Hooks -----------------------------------------------------
 
-    // ----------------------------------------------------------------
-    // Internal fire methods (called by managers)
-    // ----------------------------------------------------------------
+    public void onGameEnd(BiConsumer<String, String> hook)      { gameEndHooks.add(hook); }
+    public void onRoundStart(Consumer<Integer> hook)            { roundStartHooks.add(hook); }
+    public void onTournamentStart(Runnable hook)                { tournamentStartHooks.add(hook); }
 
     public void fireGameEnd(String gameName, String winner) {
-        for (BiConsumer<String, String> h : gameEndHooks) {
-            try { h.accept(gameName, winner); }
-            catch (Exception e) { plugin.getLogger().warning("API gameEnd hook error: " + e.getMessage()); }
-        }
+        for (var h : gameEndHooks) { try { h.accept(gameName, winner); } catch (Exception ignored) {} }
     }
-
     public void fireRoundStart(int round) {
-        for (Consumer<Integer> h : roundStartHooks) {
-            try { h.accept(round); }
-            catch (Exception e) { plugin.getLogger().warning("API roundStart hook error: " + e.getMessage()); }
-        }
+        for (var h : roundStartHooks) { try { h.accept(round); } catch (Exception ignored) {} }
     }
-
     public void fireTournamentStart() {
-        for (Runnable h : tournamentStartHooks) {
-            try { h.run(); }
-            catch (Exception e) { plugin.getLogger().warning("API tournamentStart hook error: " + e.getMessage()); }
-        }
+        for (var h : tournamentStartHooks) { try { h.run(); } catch (Exception ignored) {} }
     }
 }
