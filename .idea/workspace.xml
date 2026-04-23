@@ -4,65 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Randomteams option&#10;Points on Scoreboard">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/KMCCore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/KMCCore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/api/KMCApi.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/api/KMCApi.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/CoinsCommand.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/GameCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/GameCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/LeaderboardCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/LeaderboardCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/NPCCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/NPCCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/StatsCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/StatsCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/TournamentCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/TournamentCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/VoteCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/commands/VoteCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/database/DatabaseManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/database/DatabaseManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/GameManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/PlayerDataManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/PlayerDataManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/PointsManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/PointsManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TabListManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TabListManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TeamManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TeamManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TournamentManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/managers/TournamentManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/models/PlayerData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/models/PlayerData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/npc/NPCManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/npc/NPCManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/scoreboard/ScoreboardManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/scoreboard/ScoreboardManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/util/ClickableVoteMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/nl/kmc/kmccore/util/ClickableVoteMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/config.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/messages.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/messages.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/KMCCore-1.0.0.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/config.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/messages.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/messages.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/KMCCore.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/KMCCore.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/api/KMCApi.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/api/KMCApi.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/CoinsCommand.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/GameCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/GameCommand.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/LeaderboardCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/LeaderboardCommand.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/NPCCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/NPCCommand.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/StatsCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/StatsCommand.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/TournamentCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/TournamentCommand.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/VoteCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/commands/VoteCommand.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/database/DatabaseManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/database/DatabaseManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerJoinQuitListener.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerKillListener.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/listeners/PlayerKillListener.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/GameManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/GameManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/PlayerDataManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/PlayerDataManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/PointsManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/PointsManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TabListManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TabListManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TeamManager$AddResult.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TeamManager$AddResult.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TeamManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TeamManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TournamentManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/managers/TournamentManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/models/PlayerData.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/models/PlayerData.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager$KmcNpc.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager$KmcNpc.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager$NpcType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager$NpcType.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/npc/NPCManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/scoreboard/ScoreboardManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/scoreboard/ScoreboardManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/util/ClickableVoteMessage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/nl/kmc/kmccore/util/ClickableVoteMessage.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/original-KMCCore-1.0.0.jar" beforeDir="false" />
-    </list>
+    <list default="true" id="0e9cef0e-219c-4c0a-a987-afef410882d9" name="Changes" comment="Randomteams option&#10;Points on Scoreboard" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -130,7 +72,7 @@
       <updated>1776950267468</updated>
       <workItem from="1776950268560" duration="1795000" />
       <workItem from="1776953045662" duration="390000" />
-      <workItem from="1776953524488" duration="11131000" />
+      <workItem from="1776953524488" duration="11440000" />
     </task>
     <task id="LOCAL-00001" summary="first build">
       <option name="closed" value="true" />
@@ -196,7 +138,23 @@
       <option name="project" value="LOCAL" />
       <updated>1776974685649</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Randomteams option&#10;Points on Scoreboard">
+      <option name="closed" value="true" />
+      <created>1776974706937</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1776974706937</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Randomteams option&#10;Points on Scoreboard">
+      <option name="closed" value="true" />
+      <created>1776974999420</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1776974999420</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
